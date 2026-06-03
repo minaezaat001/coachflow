@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { utapi } from "@/lib/uploadthing";
 
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
-    const clientId = formData.get("clientId") as string | null;
-    const field = formData.get("field") as string | null;
 
     if (!file) {
       return NextResponse.json({ error: "الملف مطلوب" }, { status: 400 });
@@ -24,21 +21,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `حجم الملف يجب أن لا يتجاوز ${maxMb} ميجابايت` }, { status: 400 });
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    const response = await utapi.uploadFiles(file);
 
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(uploadsDir, { recursive: true });
+    if (response.error) {
+      return NextResponse.json({ error: "فشل رفع الملف إلى السحابة" }, { status: 500 });
+    }
 
-    const ext = path.extname(file.name) || ".bin";
-    const safeName = file.name.replace(/[^a-zA-Z0-9\u0600-\u06FF\s.-]/g, "_");
-    const filename = `${Date.now()}-${safeName}`;
-    const filepath = path.join(uploadsDir, filename);
-    await writeFile(filepath, buffer);
-
-    const url = `/uploads/${filename}`;
-
-    return NextResponse.json({ url, filename: safeName });
+    return NextResponse.json({ url: response.data.url, filename: file.name });
   } catch (error) {
     return NextResponse.json({ error: "حدث خطأ أثناء رفع الملف" }, { status: 500 });
   }
