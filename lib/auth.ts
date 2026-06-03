@@ -54,11 +54,16 @@ export async function logoutUser() {
 export async function getCurrentUser() {
   const session = await getSession();
   if (!session.isLoggedIn || !session.userId) return null;
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { whatsapp: true },
+  });
   return {
     id: session.userId,
     email: session.email,
     name: session.name,
     role: session.role || "coach",
+    whatsapp: dbUser?.whatsapp || null,
   };
 }
 

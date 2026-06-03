@@ -12,13 +12,18 @@ const typeIcons: Record<string, React.ReactNode> = {
 
 export default function PricingPage() {
   const [packages, setPackages] = useState<any[]>([])
+  const [coachName, setCoachName] = useState("شيكو")
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch("/api/public/packages")
-      .then(r => r.json())
-      .then(d => { setPackages(d.packages || []); setLoading(false) })
-      .catch(() => setLoading(false))
+    Promise.all([
+      fetch("/api/public/packages").then(r => r.json()),
+      fetch("/api/public/coach").then(r => r.json()),
+    ]).then(([pkgData, coachData]) => {
+      setPackages(pkgData.packages || [])
+      if (coachData.name) setCoachName(coachData.name)
+      setLoading(false)
+    }).catch(() => setLoading(false))
   }, [])
 
   return (
@@ -31,7 +36,7 @@ export default function PricingPage() {
           </div>
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight mb-4">اختر باقتك المثالية</h1>
           <p className="text-sm sm:text-base text-muted-foreground font-medium max-w-xl mx-auto">
-            خطط تدريب وتغذية مخصصة تناسب أهدافك مع متابعة يومية من المدرب شيكو
+            {`خطط تدريب وتغذية مخصصة تناسب أهدافك مع متابعة يومية من المدرب ${coachName}`}
           </p>
         </div>
 
@@ -91,7 +96,7 @@ export default function PricingPage() {
         <div className="mt-16 text-center">
           <div className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground">
             <Users className="w-4 h-4" />
-            <span>مدربك الشخصي: شيكو — تواصل عبر واتساب للمزيد</span>
+            <span>{`مدربك الشخصي: ${coachName} — تواصل عبر واتساب للمزيد`}</span>
           </div>
         </div>
       </div>

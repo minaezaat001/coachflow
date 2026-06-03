@@ -11,13 +11,13 @@ async function main() {
   if (existing) {
     await prisma.user.update({
       where: { email },
-      data: { role: "super_admin", name: "ميكي" },
+      data: { role: "super_admin", name: "ميكي", whatsapp: "201155261969" },
     });
     console.log("super_admin updated:", email);
   } else {
     const hash = await bcrypt.hash(password, 12);
     await prisma.user.create({
-      data: { email, passwordHash: hash, name: "ميكي", role: "super_admin" },
+      data: { email, passwordHash: hash, name: "ميكي", role: "super_admin", whatsapp: "201155261969" },
     });
     console.log("super_admin created:", email);
   }

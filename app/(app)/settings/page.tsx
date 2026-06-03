@@ -36,7 +36,14 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
   const [name, setName] = useState(user?.name || "");
+  const [whatsapp, setWhatsapp] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  React.useEffect(() => {
+    fetch("/api/auth/me").then(r => r.json()).then(d => {
+      if (d.user?.whatsapp) setWhatsapp(d.user.whatsapp);
+    }).catch(() => {});
+  }, []);
   const [themeEffects, setThemeEffects] = useState(true);
   const [subAlerts, setSubAlerts] = useState(true);
   const [payAlerts, setPayAlerts] = useState(true);
@@ -52,7 +59,7 @@ export default function SettingsPage() {
       const res = await fetch("/api/auth/me", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name, whatsapp }),
       });
       if (!res.ok) throw new Error("فشل حفظ التغييرات");
       toast({ title: "تم حفظ التغييرات بنجاح" });
@@ -154,8 +161,8 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground">نبذة تعريفية</Label>
-                  <Input placeholder="نبذة قصيرة تظهر للمتدربين" />
+                  <Label className="text-xs text-muted-foreground">رقم واتساب (لظهور في رابط الدعم)</Label>
+                  <Input value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="201155261969" dir="ltr" />
                 </div>
                 <div className="flex justify-end pt-2">
                   <Button disabled={isSaving} onClick={handleSaveProfile}>

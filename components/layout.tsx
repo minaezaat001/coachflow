@@ -42,6 +42,11 @@ function NavContent({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname()
   const { user, signOut } = useAuth()
   const [copied, setCopied] = useState(false)
+  const [whatsapp, setWhatsapp] = useState("201155261969")
+
+  React.useEffect(() => {
+    fetch("/api/public/coach").then(r => r.json()).then(d => { if (d.whatsapp) setWhatsapp(d.whatsapp) }).catch(() => {})
+  }, [])
 
   const copyPricingLink = () => {
     navigator.clipboard.writeText(`${window.location.origin}/pricing`)
@@ -114,7 +119,7 @@ function NavContent({ onClose }: { onClose?: () => void }) {
           <span className="text-xs">{copied ? "تم النسخ!" : "رابط التسجيل"}</span>
         </button>
 
-        <Link href="https://wa.me/201155261969?text=%D9%85%D8%B1%D8%AD%D8%A8%D8%A7%D9%8B%20%D9%83%D8%A7%D8%A8%D8%AA%D9%86%20%D9%85%D9%8A%D9%83%D9%8A%D8%8C%20%D8%A3%D8%AD%D8%AA%D8%A7%D8%AC%20%D8%A5%D9%84%D9%8A%20%D9%85%D9%83%D9%88%D9%86%20%D9%85%D8%B3%D8%A7%D8%B9%D8%AF%D8%A9%20%D8%A8%D8%AE%D8%B5%D9%85%20%D8%AD%D8%B3%D8%A7%D8%A8%D9%8A%20%D9%81%D9%8A%20coachflow" target="_blank" rel="noopener noreferrer">
+        <Link href={`https://wa.me/${whatsapp}?text=${encodeURIComponent("مرحباً كابتن ميكي، أحتاج إلي مكون مساعدة بخصوص حسابي في coachflow")}`} target="_blank" rel="noopener noreferrer">
           <div className="w-full flex items-center gap-3 px-3 h-9 rounded-lg text-sm text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all">
             <MessageCircle className="w-4 h-4 shrink-0" />
             <span className="text-xs">تواصل مع الدعم</span>

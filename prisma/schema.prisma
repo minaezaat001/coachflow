@@ -17,6 +17,7 @@ model User {
   passwordHash String
   role         String   @default("coach")
   suspended    Boolean  @default(false)
+  whatsapp     String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
