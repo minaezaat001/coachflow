@@ -1,0 +1,252 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String
+  role         String   @default("coach")
+  suspended    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  clients      Client[]
+  todos        Todo[]
+  notifications Notification[]
+  packages     Package[]
+  leads        Lead[]
+}
+
+model Client {
+  id                   Int       @id @default(autoincrement())
+  coachId              String
+  name                 String
+  phone                String    @unique
+  goal                 String
+  weight               Float?
+  height               Float?
+  tags                 String    @default("[]")
+  notes                String?
+  dietPlanUrl          String?
+  workoutPlanUrl       String?
+  subscriptionType     String?
+  subscriptionStartDate String?
+  subscriptionEndDate  String?
+  subscriptionStatus   String    @default("pending")
+  paymentStatus        String    @default("unpaid")
+  commitmentScore      Int?
+  uniqueToken          String?   @unique
+  onboarded            Boolean   @default(false)
+  packageId            Int?
+  defaultCheckInFrequency Int?  @default(7)
+  nextCheckInDate      String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  coach          User           @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  subscriptions  Subscription[]
+  payments       Payment[]
+  followups      Followup[]
+  exercises      Exercise[]
+  todos          Todo[]
+  progress       Progress[]
+  workoutLogs    WorkoutLog[]
+  onboarding     Onboarding[]
+  notifications  Notification[]
+  package        Package?       @relation(fields: [packageId], references: [id])
+  clientNotifications ClientNotification[]
+}
+
+model Subscription {
+  id        Int      @id @default(autoincrement())
+  clientId  Int
+  type      String
+  startDate String
+  endDate   String
+  price     Float?
+  status    String   @default("active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  client   Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  payments Payment[]
+}
+
+model Payment {
+  id              Int      @id @default(autoincrement())
+  clientId        Int
+  subscriptionId  Int?
+  amount          Float
+  amountRemaining Float?
+  status          String   @default("unpaid")
+  method          String   @default("cash")
+  paidAt          String?
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  client       Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  subscription  Subscription? @relation(fields: [subscriptionId], references: [id])
+}
+
+model Followup {
+  id          Int      @id @default(autoincrement())
+  clientId    Int
+  title       String   @default("متابعة")
+  type        String   @default("daily")
+  priority    String   @default("medium")
+  notes       String?
+  completed   Boolean  @default(false)
+  scheduledAt String
+  completedAt String?
+  createdAt   DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  coachId   String
+  clientId  Int?
+  title     String
+  message   String?
+  type      String
+  isRead    Boolean  @default(false)
+  targetUrl String   @default("")
+  createdAt DateTime @default(now())
+
+  coach  User    @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  client Client? @relation(fields: [clientId], references: [id])
+}
+
+model Todo {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  title     String
+  clientId  Int?
+  completed Boolean  @default(false)
+  priority  String   @default("medium")
+  dueDate   String?
+  createdAt DateTime @default(now())
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client Client? @relation(fields: [clientId], references: [id])
+}
+
+model ClientNotification {
+  id        Int      @id @default(autoincrement())
+  clientId  Int
+  title     String
+  message   String?
+  coachId   String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model Package {
+  id                       Int      @id @default(autoincrement())
+  coachId                  String
+  name                     String
+  price                    Float
+  durationMonths           Int
+  defaultCheckInFrequency  Int      @default(7)
+  packageType              String   @default("both")
+  isActive                 Boolean  @default(true)
+  maxClients               Int?
+  description              String?
+  createdAt                DateTime @default(now())
+
+  coach   User     @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  clients Client[]
+  leads   Lead[]
+}
+
+model Exercise {
+  id           Int      @id @default(autoincrement())
+  clientId     Int
+  exerciseName String
+  sets         Int?
+  reps         Int?
+  weight       Float?
+  notes        String?
+  loggedAt     String
+  createdAt    DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model Progress {
+  id         Int      @id @default(autoincrement())
+  clientId   Int
+  weight     Float?
+  bodyFat    Float?
+  waist      Float?
+  chest      Float?
+  neck       Float?
+  leg        Float?
+  arm        Float?
+  glutes     Float?
+  adherence  Int?
+  notes      String?
+  planFeedback   String?
+  improvementsView String?
+  planAction     String?
+  coachComment   String?
+  frontPhoto String?
+  sidePhoto  String?
+  backPhoto  String?
+  inbodyPhoto String?
+  recordedAt String
+  createdAt  DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model WorkoutLog {
+  id           Int      @id @default(autoincrement())
+  clientId     Int
+  exerciseName String
+  sets         String?
+  reps         Int?
+  weight       Float?
+  notes        String?
+  date         String
+  createdAt    DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model Lead {
+  id               Int      @id @default(autoincrement())
+  coachId          String
+  name             String
+  phone            String
+  age              Int?
+  weight           Float?
+  height           Float?
+  target           String?
+  selectedPackageId Int?
+  data             String   @default("{}")
+  status           String   @default("pending") // "pending" | "converted"
+  createdAt        DateTime @default(now())
+
+  coach   User     @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  package Package? @relation(fields: [selectedPackageId], references: [id])
+}
+
+model Onboarding {
+  id          Int      @id @default(autoincrement())
+  clientId    Int
+  data        String   @default("{}")
+  submittedAt DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}

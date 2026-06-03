@@ -1,0 +1,188 @@
+"use client"
+
+import * as React from "react"
+import { useState } from "react"
+import Link from "next/link"
+import Image from "next/image"
+import { usePathname } from "next/navigation"
+import { cn } from "@/lib/utils"
+import {
+  LayoutDashboard,
+  Users,
+  CreditCard,
+  CalendarCheck,
+  CheckSquare,
+  Menu,
+  X,
+  LogOut,
+  Settings,
+  MessageCircle,
+  Package,
+  Upload,
+  UserPlus,
+  Bell,
+} from "lucide-react"
+import { Button } from "./ui/button"
+import { NotificationBell } from "./NotificationBell"
+import { useAuth } from "./auth-context"
+
+const navItems = [
+  { href: "/",             label: "لوحة التحكم",       icon: LayoutDashboard },
+  { href: "/leads",        label: "طلبات الاشتراك",    icon: UserPlus },
+  { href: "/clients",      label: "إدارة العملاء",     icon: Users },
+  { href: "/check-ins",    label: "المتابعات",          icon: CalendarCheck },
+  { href: "/import",       label: "استيراد العملاء",   icon: Upload },
+  { href: "/packages",     label: "باقات الاشتراك",    icon: Package },
+  { href: "/payments",     label: "السجلات المالية",   icon: CreditCard },
+  { href: "/todos",        label: "قائمة المهام",      icon: CheckSquare },
+  { href: "/settings",     label: "الإعدادات العامة",   icon: Settings },
+]
+
+function NavContent({ onClose }: { onClose?: () => void }) {
+  const pathname = usePathname()
+  const { user, signOut } = useAuth()
+  const [copied, setCopied] = useState(false)
+
+  const copyPricingLink = () => {
+    navigator.clipboard.writeText(`${window.location.origin}/pricing`)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="flex flex-col h-full bg-sidebar">
+      <div className="flex items-center justify-between px-5 h-14 border-b border-sidebar-border/50">
+        <Link href="/" className="flex items-center gap-2">
+          <Image src="/assets/logo.png" alt="CoachFlow" width={24} height={24} className="w-6 h-6 object-contain" />
+          <span className="text-sm font-semibold tracking-tight text-white">CoachFlow</span>
+        </Link>
+        <div className="flex items-center gap-1">
+          <NotificationBell align="start" />
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-all"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-3 px-3 flex-1">
+        <nav className="space-y-0.5">
+          {navItems.map((item) => {
+            const isActive =
+              pathname === item.href ||
+              (item.href !== "/" && pathname.startsWith(item.href))
+
+            return (
+              <Link key={item.href} href={item.href} onClick={onClose}>
+                <div
+                  className={cn(
+                    "flex items-center gap-3 px-3 h-9 rounded-lg text-sm transition-all duration-150 relative",
+                    isActive
+                      ? "bg-sidebar-accent text-white font-medium"
+                      : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                  )}
+                >
+                  {isActive && (
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full bg-primary" />
+                  )}
+                  <item.icon className="w-4 h-4 shrink-0" />
+                  <span>{item.label}</span>
+                </div>
+              </Link>
+            )
+          })}
+
+        </nav>
+      </div>
+
+      <div className="px-3 pb-3 space-y-0.5">
+        <button
+          onClick={copyPricingLink}
+          className="w-full flex items-center gap-3 px-3 h-9 rounded-lg text-sm text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all"
+        >
+          <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            {copied ? (
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            )}
+          </svg>
+          <span className="text-xs">{copied ? "تم النسخ!" : "رابط التسجيل"}</span>
+        </button>
+
+        <Link href="https://wa.me/201155261969?text=%D9%85%D8%B1%D8%AD%D8%A8%D8%A7%D9%8B%20%D9%83%D8%A7%D8%A8%D8%AA%D9%86%20%D9%85%D9%8A%D9%83%D9%8A%D8%8C%20%D8%A3%D8%AD%D8%AA%D8%A7%D8%AC%20%D8%A5%D9%84%D9%8A%20%D9%85%D9%83%D9%88%D9%86%20%D9%85%D8%B3%D8%A7%D8%B9%D8%AF%D8%A9%20%D8%A8%D8%AE%D8%B5%D9%85%20%D8%AD%D8%B3%D8%A7%D8%A8%D9%8A%20%D9%81%D9%8A%20coachflow" target="_blank" rel="noopener noreferrer">
+          <div className="w-full flex items-center gap-3 px-3 h-9 rounded-lg text-sm text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all">
+            <MessageCircle className="w-4 h-4 shrink-0" />
+            <span className="text-xs">تواصل مع الدعم</span>
+          </div>
+        </Link>
+
+        <div className="pt-2 mt-2 border-t border-sidebar-border/50">
+          <button
+            onClick={signOut}
+            className="w-full flex items-center gap-3 px-3 h-9 rounded-lg text-sm text-sidebar-foreground/40 hover:text-red-400 hover:bg-sidebar-accent/50 transition-all"
+          >
+            <LogOut className="w-4 h-4 shrink-0" />
+            <span className="text-xs truncate">{user?.email || "تسجيل الخروج"}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function Layout({ children }: { children: React.ReactNode }) {
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  return (
+    <div className="min-h-screen bg-background flex" dir="rtl">
+      <aside className="hidden lg:flex flex-col w-60 h-screen sticky top-0 shrink-0 bg-sidebar z-40">
+        <NavContent />
+      </aside>
+
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 lg:hidden animate-fade-in"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      <aside
+        className={cn(
+          "fixed top-0 right-0 h-full w-60 z-50 bg-sidebar transform transition-transform duration-300 ease-out lg:hidden",
+          mobileOpen ? "translate-x-0" : "translate-x-full"
+        )}
+      >
+        <NavContent onClose={() => setMobileOpen(false)} />
+      </aside>
+
+      <main className="flex-1 flex flex-col min-w-0 min-h-screen">
+        <header className="sticky top-0 z-30 flex items-center justify-between px-4 h-14 bg-background/80 backdrop-blur-sm lg:hidden">
+          <Link href="/" className="flex items-center gap-2">
+            <Image src="/assets/logo.png" alt="CoachFlow" width={24} height={24} className="w-6 h-6 object-contain" />
+            <span className="text-sm font-semibold tracking-tight">CoachFlow</span>
+          </Link>
+          <div className="flex items-center gap-2">
+            <NotificationBell align="start" />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-8 h-8"
+              onClick={() => setMobileOpen(true)}
+            >
+              <Menu className="w-4 h-4" />
+            </Button>
+          </div>
+        </header>
+
+        <div className="flex-1 p-6 md:p-8 lg:p-10 max-w-6xl mx-auto w-full">
+          {children}
+        </div>
+      </main>
+    </div>
+  )
+}
