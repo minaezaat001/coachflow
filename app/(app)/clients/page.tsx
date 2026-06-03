@@ -34,7 +34,9 @@ import {
   MessageCircle,
   Trash2,
   ChevronLeft,
-  Target,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   Weight,
   Star,
   Users,
@@ -54,20 +56,14 @@ const paymentConfig: Record<string, { variant: "default" | "destructive" | "warn
   partial: { variant: "warning", label: "جزئي" },
 };
 
-const fetchClients = async () => {
-  const res = await fetch("/api/clients");
-  if (!res.ok) throw new Error("فشل جلب العملاء");
-  const data = await res.json();
-  return (data.clients || []).map((c: any) => ({
-    ...c,
-    subscriptionStatus: calculateClientStatus(c),
-  }));
-};
+const PAGE_SIZE = 20;
 
 export default function Clients() {
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [goalFilter, setGoalFilter] = useState("all");
+  const [page, setPage] = useState(1);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -75,15 +71,47 @@ export default function Clients() {
 
   useEffect(() => {
     const filter = searchParams.get("filter");
-    if (filter === "active") setStatusFilter("active");
-    if (filter === "expired") setStatusFilter("expired");
-    if (filter === "pending") setStatusFilter("pending");
+    if (filter === "active") { setStatusFilter("active"); setPage(1); }
+    if (filter === "expired") { setStatusFilter("expired"); setPage(1); }
+    if (filter === "pending") { setStatusFilter("pending"); setPage(1); }
   }, [searchParams]);
 
-  const { data: clients, isLoading } = useQuery({
-    queryKey: ["clients"],
-    queryFn: fetchClients,
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, goalFilter]);
+
+  const queryParams = new URLSearchParams();
+  if (debouncedSearch) queryParams.set("search", debouncedSearch);
+  if (statusFilter !== "all") queryParams.set("status", statusFilter);
+  if (goalFilter !== "all") queryParams.set("goal", goalFilter);
+  queryParams.set("page", String(page));
+  queryParams.set("limit", String(PAGE_SIZE));
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["clients", queryParams.toString()],
+    queryFn: async () => {
+      const res = await fetch(`/api/clients?${queryParams.toString()}`);
+      if (!res.ok) throw new Error("فشل جلب العملاء");
+      return res.json();
+    },
   });
+
+  const clients = (data?.clients || []).map((c: any) => ({
+    ...c,
+    subscriptionStatus: calculateClientStatus(c),
+  }));
+  const total = data?.total || 0;
+  const totalPages = data?.totalPages || 1;
+  const from = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const to = Math.min(page * PAGE_SIZE, total);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -101,13 +129,6 @@ export default function Clients() {
     }
   });
 
-  const filteredClients = clients?.filter((c: any) => {
-    const nameMatch = !search || c.name?.toLowerCase().includes(search.toLowerCase()) || c.phone?.includes(search);
-    const statusMatch = statusFilter === "all" || c.subscriptionStatus === statusFilter;
-    const goalMatch = goalFilter === "all" || c.goal === goalFilter;
-    return nameMatch && statusMatch && goalMatch;
-  });
-
   const activeCount = clients?.filter((c: any) => c.subscriptionStatus === "active").length || 0;
 
   return (
@@ -123,7 +144,7 @@ export default function Clients() {
           <h1 className="text-2xl font-bold tracking-tight mt-1.5">قائمة العملاء</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {isLoading ? "جاري التحميل..." : (
-              <>{filteredClients?.length ?? 0} متدرب — <span className="text-energy font-medium">{activeCount} نشط</span></>
+              <>{total} متدرب — إظهار {from}-{to}</>
             )}
           </p>
         </div>
@@ -177,23 +198,21 @@ export default function Clients() {
             <Skeleton key={i} className="h-16 w-full" />
           ))}
         </div>
-      ) : filteredClients?.length === 0 ? (
+      ) : clients.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-card p-12 text-center">
           <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mx-auto mb-4">
             <Users className="w-7 h-7 text-primary" />
           </div>
-          <p className="text-base font-semibold text-foreground mb-1">لا يوجد عملاء بعد</p>
-          <p className="text-sm text-muted-foreground mb-5">أضف أول عميل وابدأ رحلة التغيير</p>
-          <Link href="/clients/new">
-            <Button>
-              <Plus className="w-4 h-4" />
-              إضافة عميل
-            </Button>
-          </Link>
+          <p className="text-base font-semibold text-foreground mb-1">لا يوجد عملاء</p>
+          <p className="text-sm text-muted-foreground mb-5">لم نجد نتائج تطابق بحثك</p>
+          <Button variant="outline" onClick={() => { setSearch(""); setDebouncedSearch(""); setStatusFilter("all"); setGoalFilter("all"); }}>
+            إعادة تعيين الفلاتر
+          </Button>
         </div>
       ) : (
+        <>
         <div className="rounded-xl bg-card shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] divide-y divide-border/50 overflow-hidden">
-          {filteredClients?.map((client: any, i: number) => {
+          {clients.map((client: any, i: number) => {
             const subStatus = client.subscriptionStatus;
             return (
               <div
@@ -282,6 +301,82 @@ export default function Clients() {
             );
           })}
         </div>
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-4">
+            <p className="text-sm text-muted-foreground">
+              {from}-{to} من {total}
+            </p>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="w-8 h-8"
+                disabled={page <= 1}
+                onClick={() => setPage(1)}
+              >
+                <ChevronsRight className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="w-8 h-8"
+                disabled={page <= 1}
+                onClick={() => setPage(p => p - 1)}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+              <div className="flex items-center gap-1 px-2">
+                {(() => {
+                  const pages: (number | "...")[] = [];
+                  const start = Math.max(1, page - 2);
+                  const end = Math.min(totalPages, page + 2);
+                  if (start > 1) { pages.push(1); if (start > 2) pages.push("..."); }
+                  for (let i = start; i <= end; i++) pages.push(i);
+                  if (end < totalPages) { if (end < totalPages - 1) pages.push("..."); pages.push(totalPages); }
+                  return pages.map((p, i) =>
+                    p === "..." ? (
+                      <span key={`dots-${i}`} className="w-8 h-8 flex items-center justify-center text-xs text-muted-foreground">...</span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => setPage(p)}
+                        className={cn(
+                          "w-8 h-8 rounded-lg text-sm font-medium transition-all",
+                          p === page
+                            ? "bg-primary text-primary-foreground"
+                            : "text-muted-foreground hover:bg-muted"
+                        )}
+                      >
+                        {p}
+                      </button>
+                    )
+                  );
+                })()}
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="w-8 h-8"
+                disabled={page >= totalPages}
+                onClick={() => setPage(p => p + 1)}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="w-8 h-8"
+                disabled={page >= totalPages}
+                onClick={() => setPage(totalPages)}
+              >
+                <ChevronsLeft className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+        </>
+
       )}
 
       <AlertDialog open={deleteId !== null} onOpenChange={(o) => !o && setDeleteId(null)}>

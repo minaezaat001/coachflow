@@ -10,9 +10,11 @@ export async function GET(req: Request) {
     const user = await requireAuth();
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search");
-    const status = searchParams.get("status");
+    const statusFilter = searchParams.get("status");
     const goal = searchParams.get("goal");
     const tag = searchParams.get("tag");
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20")));
 
     const where: any = { coachId: user.id };
 
@@ -23,11 +25,7 @@ export async function GET(req: Request) {
       ];
     }
 
-    if (status) {
-      where.subscriptionStatus = status;
-    }
-
-    if (goal) {
+    if (goal && goal !== "all") {
       where.goal = goal;
     }
 
@@ -35,17 +33,45 @@ export async function GET(req: Request) {
       where.tags = { contains: tag };
     }
 
-    const clients = await prisma.client.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-    });
+    if (statusFilter && statusFilter !== "all") {
+      const now = new Date().toISOString().split("T")[0];
+      if (statusFilter === "active") {
+        where.subscriptionStatus = { not: "pending" };
+        where.AND = [
+          { OR: [
+            { subscriptionEndDate: { gte: now } },
+            { subscriptionEndDate: null },
+          ]},
+        ];
+      } else if (statusFilter === "expired") {
+        where.subscriptionEndDate = { lt: now };
+      } else if (statusFilter === "pending") {
+        where.subscriptionStatus = "pending";
+      }
+    }
+
+    const [clients, total] = await Promise.all([
+      prisma.client.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.client.count({ where }),
+    ]);
 
     const mapped = clients.map((c) => ({
       ...c,
       tags: parseTags(c.tags),
     }));
 
-    return NextResponse.json({ clients: mapped });
+    return NextResponse.json({
+      clients: mapped,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    });
   } catch (error) {
     return NextResponse.json({ error: "حدث خطأ أثناء جلب العملاء" }, { status: 500 });
   }
