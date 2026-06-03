@@ -28,7 +28,7 @@ const schema = z.object({
   mainGoal: z.enum(["fat-loss", "muscle-gain", "fitness"]),
 })
 
-export function OnboardingForm({ clientId, coachId, onComplete }: { clientId: string, coachId: string | null, onComplete: () => void }) {
+export function OnboardingForm({ clientId, coachId, clientToken, onComplete }: { clientId: string, coachId: string | null, clientToken?: string | null, onComplete: () => void }) {
   const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm({ resolver: zodResolver(schema) })
   const { toast } = useToast()
 
@@ -38,7 +38,7 @@ export function OnboardingForm({ clientId, coachId, onComplete }: { clientId: st
       const res = await fetch(`/api/onboarding`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId, data: formData }),
+        body: JSON.stringify({ clientId, token: clientToken || undefined, data: formData }),
       })
       if (!res.ok) {
         const err = await res.json()

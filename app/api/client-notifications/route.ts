@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireAuth } from "@/lib/auth";
 
 export async function GET(req: Request) {
   try {
@@ -29,18 +30,41 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const data = await req.json();
+    const { searchParams } = new URL(req.url);
+    const token = searchParams.get("token");
 
-    if (!data.clientId || !data.title) {
-      return NextResponse.json({ error: "العميل والعنوان مطلوبان" }, { status: 400 });
+    if (!token) {
+      await requireAuth();
+      const data = await req.json();
+      if (!data.clientId || !data.title) {
+        return NextResponse.json({ error: "العميل والعنوان مطلوبان" }, { status: 400 });
+      }
+      const notification = await prisma.clientNotification.create({
+        data: {
+          clientId: data.clientId,
+          title: data.title,
+          message: data.message || null,
+          coachId: data.coachId || null,
+        },
+      });
+      return NextResponse.json({ notification }, { status: 201 });
+    }
+
+    const client = await prisma.client.findUnique({ where: { uniqueToken: token } });
+    if (!client) {
+      return NextResponse.json({ error: "الرمز غير صالح" }, { status: 401 });
+    }
+
+    const data = await req.json();
+    if (!data.title) {
+      return NextResponse.json({ error: "العنوان مطلوب" }, { status: 400 });
     }
 
     const notification = await prisma.clientNotification.create({
       data: {
-        clientId: data.clientId,
+        clientId: client.id,
         title: data.title,
         message: data.message || null,
-        coachId: data.coachId || null,
       },
     });
 

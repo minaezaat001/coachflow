@@ -28,7 +28,7 @@ const schema = z.object({
   improvementsView: z.string().optional(),
 })
 
-export function CheckinForm({ clientId, coachId, onComplete }: { clientId: string, coachId: string | null, onComplete: () => void }) {
+export function CheckinForm({ clientId, coachId, clientToken, onComplete }: { clientId: string, coachId: string | null, clientToken?: string | null, onComplete: () => void }) {
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({ resolver: zodResolver(schema) })
   const { toast } = useToast()
   const [frontPhoto, setFrontPhoto] = React.useState<string | null>(null)
@@ -40,6 +40,7 @@ export function CheckinForm({ clientId, coachId, onComplete }: { clientId: strin
     try {
       const payload: any = {
         clientId,
+        token: clientToken || undefined,
         recordedAt: new Date().toISOString(),
         weight: data.weight,
         adherence: data.adherence,

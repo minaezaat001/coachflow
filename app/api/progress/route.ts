@@ -3,6 +3,14 @@ import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 import { createNotification, clientTabUrl } from "@/lib/notifications";
 
+async function resolveClientAuthorized(clientId: number, token?: string | null) {
+  if (token) {
+    return prisma.client.findUnique({ where: { uniqueToken: token } });
+  }
+  const user = await requireAuth();
+  return prisma.client.findFirst({ where: { id: clientId, coachId: user.id } });
+}
+
 export async function GET(req: Request) {
   try {
     const user = await requireAuth();
@@ -37,9 +45,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "العميل والتاريخ مطلوبان" }, { status: 400 });
     }
 
-    const client = await prisma.client.findUnique({ where: { id: data.clientId } });
-    if (!client) {
-      return NextResponse.json({ error: "العميل غير موجود" }, { status: 404 });
+    if (!data.token) {
+      try { await requireAuth(); } catch { return NextResponse.json({ error: "غير مصرح" }, { status: 401 }); }
+    }
+    const client = await resolveClientAuthorized(data.clientId, data.token);
+    if (!client || (data.token && client.id !== data.clientId)) {
+      return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
     }
 
     const progress = await prisma.progress.create({
@@ -65,7 +76,6 @@ export async function POST(req: Request) {
       },
     });
 
-    // Sync latest weight to client model
     if (data.weight) {
       await prisma.client.update({
         where: { id: data.clientId },

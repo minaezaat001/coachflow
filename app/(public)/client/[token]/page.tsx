@@ -126,7 +126,7 @@ export default function ClientDashboard() {
   if (!client.onboarded) {
     return (
       <div className="p-6 max-w-2xl mx-auto">
-        <OnboardingForm clientId={client.id} coachId={coachId} onComplete={() => window.location.reload()} />
+        <OnboardingForm clientId={client.id} coachId={coachId} clientToken={client.uniqueToken} onComplete={() => window.location.reload()} />
       </div>
     );
   }
@@ -272,7 +272,7 @@ export default function ClientDashboard() {
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-black">المتابعة الدورية</DialogTitle>
                 </DialogHeader>
-                <CheckinForm clientId={client.id} coachId={coachId} onComplete={() => { setCheckinOpen(false); setRefreshKey(k => k + 1); }} />
+                <CheckinForm clientId={client.id} coachId={coachId} clientToken={client.uniqueToken} onComplete={() => { setCheckinOpen(false); setRefreshKey(k => k + 1); }} />
               </DialogContent>
             </Dialog>
             <Dialog open={workoutOpen} onOpenChange={setWorkoutOpen}>

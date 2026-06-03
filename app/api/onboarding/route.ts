@@ -42,9 +42,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "معرف العميل مطلوب" }, { status: 400 });
     }
 
-    const client = await prisma.client.findUnique({ where: { id: data.clientId } });
-    if (!client) {
-      return NextResponse.json({ error: "العميل غير موجود" }, { status: 404 });
+    let client;
+    if (data.token) {
+      client = await prisma.client.findUnique({ where: { uniqueToken: data.token } });
+      if (!client || client.id !== data.clientId) {
+        return NextResponse.json({ error: "الرمز غير صالح" }, { status: 401 });
+      }
+    } else {
+      const user = await requireAuth();
+      client = await prisma.client.findFirst({ where: { id: data.clientId, coachId: user.id } });
+      if (!client) {
+        return NextResponse.json({ error: "العميل غير موجود" }, { status: 404 });
+      }
     }
 
     const onboarding = await prisma.onboarding.create({
