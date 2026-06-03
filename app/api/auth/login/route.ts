@@ -12,7 +12,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "البريد الإلكتروني أو كلمة السر غير صحيحة" }, { status: 401 });
     }
     return NextResponse.json({ user });
-  } catch (error) {
+  } catch (error: any) {
+    console.error("Login error:", error?.message || error);
     return NextResponse.json({ error: "حدث خطأ أثناء تسجيل الدخول" }, { status: 500 });
   }
 }
