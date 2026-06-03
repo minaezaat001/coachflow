@@ -162,3 +162,10 @@
 .delay-4 { animation-delay: 0.2s; }
 .delay-5 { animation-delay: 0.25s; }
 .delay-6 { animation-delay: 0.3s; }
+
+.disable-effects *,
+.disable-effects *::before,
+.disable-effects *::after {
+  animation: none !important;
+  transition: none !important;
+}

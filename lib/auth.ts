@@ -56,7 +56,7 @@ export async function getCurrentUser() {
   if (!session.isLoggedIn || !session.userId) return null;
   const dbUser = await prisma.user.findUnique({
     where: { id: session.userId },
-    select: { whatsapp: true },
+    select: { whatsapp: true, notifySubExpiry: true, notifyPayment: true },
   });
   return {
     id: session.userId,
@@ -64,6 +64,8 @@ export async function getCurrentUser() {
     name: session.name,
     role: session.role || "coach",
     whatsapp: dbUser?.whatsapp || null,
+    notifySubExpiry: dbUser?.notifySubExpiry ?? true,
+    notifyPayment: dbUser?.notifyPayment ?? true,
   };
 }
 

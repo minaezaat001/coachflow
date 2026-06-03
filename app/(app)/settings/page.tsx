@@ -39,11 +39,6 @@ export default function SettingsPage() {
   const [whatsapp, setWhatsapp] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
-  React.useEffect(() => {
-    fetch("/api/auth/me").then(r => r.json()).then(d => {
-      if (d.user?.whatsapp) setWhatsapp(d.user.whatsapp);
-    }).catch(() => {});
-  }, []);
   const [themeEffects, setThemeEffects] = useState(true);
   const [subAlerts, setSubAlerts] = useState(true);
   const [payAlerts, setPayAlerts] = useState(true);
@@ -52,6 +47,31 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  React.useEffect(() => {
+    const storedEffects = localStorage.getItem("themeEffects");
+    if (storedEffects !== null) setThemeEffects(storedEffects === "true");
+    fetch("/api/auth/me").then(r => r.json()).then(d => {
+      if (d.user?.whatsapp) setWhatsapp(d.user.whatsapp);
+      if (d.user?.notifySubExpiry !== undefined) setSubAlerts(d.user.notifySubExpiry);
+      if (d.user?.notifyPayment !== undefined) setPayAlerts(d.user.notifyPayment);
+    }).catch(() => {});
+  }, []);
+
+  React.useEffect(() => {
+    localStorage.setItem("themeEffects", String(themeEffects));
+    document.documentElement.classList.toggle("disable-effects", !themeEffects);
+  }, [themeEffects]);
+
+  const saveNotifPref = async (field: string, value: boolean) => {
+    try {
+      await fetch("/api/auth/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: value }),
+      });
+    } catch {}
+  };
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
@@ -243,14 +263,14 @@ export default function SettingsPage() {
                   <p className="text-sm font-medium">انتهاء الاشتراكات</p>
                   <p className="text-xs text-muted-foreground">تنبيه قبل الانتهاء بـ 3 أيام</p>
                 </div>
-                <Switch checked={subAlerts} onCheckedChange={setSubAlerts} />
+                <Switch checked={subAlerts} onCheckedChange={(v) => { setSubAlerts(v); saveNotifPref("notifySubExpiry", v); }} />
               </div>
               <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30">
                 <div>
                   <p className="text-sm font-medium">تنبيهات الدفع</p>
                   <p className="text-xs text-muted-foreground">إشعار عند استلام دفعة جديدة</p>
                 </div>
-                <Switch checked={payAlerts} onCheckedChange={setPayAlerts} />
+                <Switch checked={payAlerts} onCheckedChange={(v) => { setPayAlerts(v); saveNotifPref("notifyPayment", v); }} />
               </div>
             </CardContent>
           </Card>

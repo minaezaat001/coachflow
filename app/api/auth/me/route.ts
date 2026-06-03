@@ -18,6 +18,8 @@ export async function PATCH(req: Request) {
     const updateData: any = {};
     if (data.name !== undefined) updateData.name = data.name;
     if (data.whatsapp !== undefined) updateData.whatsapp = data.whatsapp;
+    if (data.notifySubExpiry !== undefined) updateData.notifySubExpiry = data.notifySubExpiry;
+    if (data.notifyPayment !== undefined) updateData.notifyPayment = data.notifyPayment;
     const updated = await prisma.user.update({ where: { id: user.id }, data: updateData });
     return NextResponse.json({ user: updated });
   } catch (error) {
