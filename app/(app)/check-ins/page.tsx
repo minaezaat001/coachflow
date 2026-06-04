@@ -177,6 +177,20 @@ export default function CheckInsDashboard() {
                     </div>
                   )}
                   {p.planFeedback && <p className="text-xs text-muted-foreground font-medium border-t pt-2 mt-2">{p.planFeedback}</p>}
+                  {p.improvementsView && (
+                    <div className="mt-2 p-2 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
+                      <p className="text-xs font-semibold text-emerald-600 mb-0.5">ما تحسن من وجهة نظر العميل</p>
+                      <p className="text-xs font-medium">{p.improvementsView}</p>
+                    </div>
+                  )}
+                  {p.notes && (
+                    <p className="text-xs text-muted-foreground/70 font-medium border-t pt-2 mt-2">{p.notes}</p>
+                  )}
+                  {p.planAction && (
+                    <div className={`mt-2 p-2 rounded-lg border ${p.planAction === "keep" ? "bg-emerald-500/5 border-emerald-500/20" : "bg-blue-500/5 border-blue-500/20"}`}>
+                      <p className="text-xs font-semibold mb-0.5">{p.planAction === "keep" ? "✅ تم تثبيت الخطة" : "🔄 تم تعديل الخطة"}</p>
+                    </div>
+                  )}
                   {p.coachComment && (
                     <div className="mt-2 p-2 rounded-lg bg-primary/5 border border-primary/10">
                       <p className="text-xs font-semibold text-primary mb-0.5">تعليق المدرب</p>
