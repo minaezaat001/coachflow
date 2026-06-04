@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Target, Weight, FileText, ExternalLink, Bell, CheckCheck, X, Clock, MessageCircle, ChevronLeft } from "lucide-react";
+import { Target, Weight, FileText, ExternalLink, Bell, CheckCheck, X, Clock, ChevronLeft } from "lucide-react";
 
 import { OnboardingForm } from "@/components/OnboardingForm";
 import { CheckinForm } from "@/components/CheckinForm";
@@ -314,15 +314,6 @@ export default function ClientDashboard() {
                   </div>
                   <ExternalLink className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
                 </a>
-                <a href={`https://wa.me/2${client.phone}?text=${encodeURIComponent(`مرحباً! هذا رابط نظام التغذية الخاص بك:\n${window.location.origin}${client.dietPlanUrl}`)}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 transition-all group">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-card border border-emerald-500/20 flex items-center justify-center">
-                      <MessageCircle className="w-4 h-4 text-emerald-500" />
-                    </div>
-                    <p className="font-black text-sm">فتح عبر واتساب</p>
-                  </div>
-                  <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-emerald-500 transition-colors" />
-                </a>
               </div>
             )}
             {client.workoutPlanUrl && (
@@ -339,15 +330,7 @@ export default function ClientDashboard() {
                 </div>
                 <ExternalLink className="w-5 h-5 text-muted-foreground group-hover:text-blue-500 transition-colors" />
               </a>
-              <a href={`https://wa.me/2${client.phone}?text=${encodeURIComponent(`مرحباً! هذا رابط نظام التمرين الخاص بك:\n${window.location.origin}${client.workoutPlanUrl}`)}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-4 rounded-2xl border border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 transition-all group">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-card border border-blue-500/20 flex items-center justify-center">
-                    <MessageCircle className="w-4 h-4 text-blue-500" />
-                  </div>
-                  <p className="font-black text-sm">فتح عبر واتساب</p>
-                </div>
-                <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-blue-500 transition-colors" />
-              </a>
+
             </div>
             )}
             {!client.dietPlanUrl && !client.workoutPlanUrl && (

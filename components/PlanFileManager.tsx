@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useState, useRef } from "react"
-import { FileText, Upload, Trash2, ExternalLink, MessageCircle, Loader2, Replace } from "lucide-react"
+import { FileText, Upload, Trash2, ExternalLink, Loader2, Replace } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
@@ -182,18 +182,6 @@ export function PlanFileManager({
               )}
               استبدال
             </Button>
-
-            <a
-              href={`https://wa.me/2${clientPhone}?text=${encodeURIComponent(`مرحباً! هذا رابط ${title} الخاص بك:\n${window.location.origin}${currentUrl}`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1"
-            >
-              <Button variant="outline" size="sm" className="h-8 text-xs w-full">
-                <MessageCircle className="w-3.5 h-3.5" />
-                واتساب
-              </Button>
-            </a>
 
             <Button
               variant="ghost"
