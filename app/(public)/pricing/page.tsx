@@ -1,7 +1,14 @@
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/db"
+import { getSession } from "@/lib/auth"
 
 export default async function PricingPage() {
+  const session = await getSession()
+
+  if (session?.isLoggedIn && session.userId && ["super_admin", "coach"].includes(session.role || "")) {
+    redirect(`/pricing/${session.userId}`)
+  }
+
   const coach = await prisma.user.findFirst({
     where: {
       role: { in: ["super_admin", "coach"] },
