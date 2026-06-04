@@ -397,14 +397,14 @@ function ClientNewForm() {
           </CardContent>
         </Card>
 
-        <div className="flex flex-col sm:flex-row gap-4 pt-4 pb-12">
-          <Button type="submit" disabled={createMutation.isPending} className="h-14 px-10 rounded-[1.25rem] bg-primary text-primary-foreground font-black text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex-1 sm:flex-none">
+        <div className="flex flex-col sm:flex-row gap-4 pt-4 pb-12 px-4 sm:px-0">
+          <Button type="submit" disabled={createMutation.isPending} className="h-14 px-10 rounded-[1.25rem] bg-primary text-primary-foreground font-black text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all w-full sm:flex-1">
             {createMutation.isPending ? (
               <><Loader2 className="w-5 h-5 animate-spin ml-3" /> جاري الحفظ...</>
             ) : "حفظ بيانات العميل"}
           </Button>
-          <Link href={leadId ? "/leads" : "/clients"}>
-            <Button type="button" variant="outline" className="h-14 px-10 rounded-[1.25rem] font-bold border-border bg-card/50 backdrop-blur-sm hover:bg-muted/50 flex-1 sm:flex-none">إلغاء</Button>
+          <Link href={leadId ? "/leads" : "/clients"} className="w-full sm:w-auto">
+            <Button type="button" variant="outline" className="h-14 px-10 rounded-[1.25rem] font-bold border-border bg-card/50 backdrop-blur-sm hover:bg-muted/50 w-full sm:w-auto">إلغاء</Button>
           </Link>
         </div>
       </form>

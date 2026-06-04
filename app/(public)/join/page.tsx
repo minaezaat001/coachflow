@@ -394,25 +394,25 @@ function JoinForm() {
           )}
 
           {/* Navigation */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 px-4 sm:px-0">
             {isFirst ? (
-              <Link href="/pricing" className="flex-1 flex items-center justify-center gap-2 h-14 rounded-xl font-black text-sm border border-border/40 bg-card/40 text-muted-foreground hover:bg-muted/20 transition-all">
+              <Link href="/pricing" className="w-full sm:flex-1 flex items-center justify-center gap-2 h-14 rounded-xl font-black text-sm border border-border/40 bg-card/40 text-muted-foreground hover:bg-muted/20 transition-all">
                 <ArrowRight className="w-4 h-4" />
                 العودة
               </Link>
             ) : (
-              <button type="button" onClick={prevStep} className="flex-1 flex items-center justify-center gap-2 h-14 rounded-xl font-black text-sm border border-border/40 bg-card/40 text-muted-foreground hover:bg-muted/20 transition-all">
+              <button type="button" onClick={prevStep} className="w-full sm:flex-1 flex items-center justify-center gap-2 h-14 rounded-xl font-black text-sm border border-border/40 bg-card/40 text-muted-foreground hover:bg-muted/20 transition-all">
                 <ChevronRight className="w-4 h-4" />
                 السابق
               </button>
             )}
             {isLast ? (
               <button type="submit" disabled={submitting}
-                className="flex-1 flex items-center justify-center gap-2 h-14 rounded-xl font-black text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all disabled:opacity-50">
+                className="w-full sm:flex-1 flex items-center justify-center gap-2 h-14 rounded-xl font-black text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all disabled:opacity-50">
                 {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> جاري الإرسال...</> : <><ArrowLeft className="w-4 h-4" /> إرسال الطلب</>}
               </button>
             ) : (
-              <button type="button" onClick={nextStep} className="flex-1 flex items-center justify-center gap-2 h-14 rounded-xl font-black text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
+              <button type="button" onClick={nextStep} className="w-full sm:flex-1 flex items-center justify-center gap-2 h-14 rounded-xl font-black text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
                 التالي
                 <ChevronLeft className="w-4 h-4" />
               </button>
