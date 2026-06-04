@@ -87,7 +87,7 @@ export default function CoachPricingPage() {
                   ))}
                 </div>
                 <div className="mt-auto">
-                  <Link href={`/join?package=${pkg.id}`} className="w-full h-12 rounded-xl font-black text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all flex items-center justify-center gap-2">
+                  <Link href={`/join?package=${pkg.id}&coachId=${coachId}`} className="w-full h-12 rounded-xl font-black text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all flex items-center justify-center gap-2">
                     اشترك الآن
                     <ArrowLeft className="w-4 h-4" />
                   </Link>

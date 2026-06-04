@@ -57,6 +57,7 @@ function MultiRankSelect({ options, value, onChange, label }: {
 function JoinForm() {
   const searchParams = useSearchParams()
   const preselectedPackage = searchParams.get("package")
+  const coachId = searchParams.get("coachId") || ""
 
   const [packages, setPackages] = useState<any[]>([])
   const [selectedPkg, setSelectedPkg] = useState(preselectedPackage || "")
@@ -97,11 +98,12 @@ function JoinForm() {
   const [error, setError] = useState("")
 
   useEffect(() => {
-    fetch("/api/public/packages")
+    const url = coachId ? `/api/public/packages?coachId=${coachId}` : "/api/public/packages"
+    fetch(url)
       .then(r => r.json())
       .then(d => setPackages(d.packages || []))
       .catch(() => {})
-  }, [])
+  }, [coachId])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -126,6 +128,7 @@ function JoinForm() {
         body: JSON.stringify({
           name, phone, age, weight, height,
           selectedPackageId: selectedPkg || undefined,
+          coachId: coachId || undefined,
           data: extraData,
         }),
       })

@@ -24,11 +24,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "الاسم ورقم الهاتف مطلوبان" }, { status: 400 });
     }
 
-    const coaches = await prisma.user.findMany({ take: 1 });
-    if (coaches.length === 0) {
-      return NextResponse.json({ error: "لا يوجد مدربون في النظام" }, { status: 400 });
+    let coachId = data.coachId;
+
+    if (!coachId) {
+      const coaches = await prisma.user.findMany({ take: 1 });
+      if (coaches.length === 0) {
+        return NextResponse.json({ error: "لا يوجد مدربون في النظام" }, { status: 400 });
+      }
+      coachId = coaches[0].id;
     }
-    const coachId = coaches[0].id;
 
     const lead = await prisma.lead.create({
       data: {
