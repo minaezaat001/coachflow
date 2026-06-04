@@ -42,7 +42,7 @@ function NavContent({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname()
   const { user, signOut } = useAuth()
   const [copied, setCopied] = useState(false)
-  const [whatsapp, setWhatsapp] = useState("201155261969")
+  const [whatsapp, setWhatsapp] = useState("")
 
   React.useEffect(() => {
     fetch("/api/public/coach").then(r => r.json()).then(d => { if (d.whatsapp) setWhatsapp(d.whatsapp) }).catch(() => {})
@@ -119,12 +119,14 @@ function NavContent({ onClose }: { onClose?: () => void }) {
           <span className="text-xs">{copied ? "تم النسخ!" : "رابط التسجيل"}</span>
         </button>
 
-        <Link href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(`مرحباً ${user?.name || "المدرب"}، أحتاج إلى مساعدة بخصوص حسابي في CoachFlow`)}`} target="_blank" rel="noopener noreferrer">
-          <div className="w-full flex items-center gap-3 px-3 h-9 rounded-lg text-sm text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all">
-            <MessageCircle className="w-4 h-4 shrink-0" />
-            <span className="text-xs">تواصل مع الدعم</span>
-          </div>
-        </Link>
+        {whatsapp && (
+          <Link href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(`مرحباً ${user?.name || "المدرب"}، أحتاج إلى مساعدة بخصوص حسابي في CoachFlow`)}`} target="_blank" rel="noopener noreferrer">
+            <div className="w-full flex items-center gap-3 px-3 h-9 rounded-lg text-sm text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all">
+              <MessageCircle className="w-4 h-4 shrink-0" />
+              <span className="text-xs">تواصل مع الدعم</span>
+            </div>
+          </Link>
+        )}
 
         <div className="pt-2 mt-2 border-t border-sidebar-border/50">
           <button

@@ -192,7 +192,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs text-muted-foreground">رقم واتساب (لظهور في رابط الدعم)</Label>
-                  <Input value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="201155261969" dir="ltr" />
+                  <Input value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="01xxxxxxxxx" dir="ltr" />
                 </div>
                 {pricingLink && (
                   <div className="space-y-2">
