@@ -49,7 +49,7 @@ function NavContent({ onClose }: { onClose?: () => void }) {
   }, [])
 
   const copyPricingLink = () => {
-    navigator.clipboard.writeText(`${window.location.origin}/pricing`)
+    navigator.clipboard.writeText(`${window.location.origin}/pricing/${user?.id || ""}`)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
