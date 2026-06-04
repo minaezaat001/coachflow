@@ -20,6 +20,8 @@ import {
   Smartphone,
   ShieldCheck,
   Sparkles,
+  Link2,
+  Copy,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -47,6 +49,14 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [pricingLink, setPricingLink] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  React.useEffect(() => {
+    if (user?.id) {
+      setPricingLink(`${window.location.origin}/pricing/${user.id}`);
+    }
+  }, [user?.id]);
 
   React.useEffect(() => {
     const storedEffects = localStorage.getItem("themeEffects");
@@ -184,6 +194,25 @@ export default function SettingsPage() {
                   <Label className="text-xs text-muted-foreground">رقم واتساب (لظهور في رابط الدعم)</Label>
                   <Input value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="201155261969" dir="ltr" />
                 </div>
+                {pricingLink && (
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">رابط الباقات (شاركه مع عملائك)</Label>
+                    <div className="flex gap-2">
+                      <Input value={pricingLink} readOnly dir="ltr" className="text-xs" />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          navigator.clipboard.writeText(pricingLink);
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                        }}
+                      >
+                        {copied ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 <div className="flex justify-end pt-2">
                   <Button disabled={isSaving} onClick={handleSaveProfile}>
                     {isSaving ? "جاري الحفظ..." : "حفظ التغييرات"}
