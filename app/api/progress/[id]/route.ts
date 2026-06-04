@@ -51,7 +51,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     });
 
     // Create notification for the client
-    const coachName = user.name || "كابتن ميكي";
+    const coachName = user.name || "المدرب";
     await prisma.clientNotification.create({
       data: {
         clientId: client.id,

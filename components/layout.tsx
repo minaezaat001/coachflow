@@ -119,7 +119,7 @@ function NavContent({ onClose }: { onClose?: () => void }) {
           <span className="text-xs">{copied ? "تم النسخ!" : "رابط التسجيل"}</span>
         </button>
 
-        <Link href={`https://wa.me/${whatsapp}?text=${encodeURIComponent("مرحباً كابتن ميكي، أحتاج إلي مكون مساعدة بخصوص حسابي في coachflow")}`} target="_blank" rel="noopener noreferrer">
+        <Link href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(`مرحباً ${user?.name || "المدرب"}، أحتاج إلى مساعدة بخصوص حسابي في CoachFlow`)}`} target="_blank" rel="noopener noreferrer">
           <div className="w-full flex items-center gap-3 px-3 h-9 rounded-lg text-sm text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all">
             <MessageCircle className="w-4 h-4 shrink-0" />
             <span className="text-xs">تواصل مع الدعم</span>
