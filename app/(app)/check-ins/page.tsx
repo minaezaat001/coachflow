@@ -176,15 +176,23 @@ export default function CheckInsDashboard() {
                       ))}
                     </div>
                   )}
-                  {p.planFeedback && <p className="text-xs text-muted-foreground font-medium border-t pt-2 mt-2">{p.planFeedback}</p>}
+                  {p.planFeedback && (
+                    <div className="mt-2 border-t pt-2">
+                      <p className="text-xs font-semibold text-muted-foreground mb-0.5">رأي العميل في الخطة</p>
+                      <p className="text-xs font-medium">{p.planFeedback}</p>
+                    </div>
+                  )}
                   {p.improvementsView && (
                     <div className="mt-2 p-2 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
-                      <p className="text-xs font-semibold text-emerald-600 mb-0.5">ما تحسن من وجهة نظر العميل</p>
+                      <p className="text-xs font-semibold text-emerald-600 mb-0.5">ماذا تحسن من وجهة نظر العميل</p>
                       <p className="text-xs font-medium">{p.improvementsView}</p>
                     </div>
                   )}
                   {p.notes && (
-                    <p className="text-xs text-muted-foreground/70 font-medium border-t pt-2 mt-2">{p.notes}</p>
+                    <div className="mt-2 border-t pt-2">
+                      <p className="text-xs font-semibold text-muted-foreground mb-0.5">ملاحظات العميل</p>
+                      <p className="text-xs text-muted-foreground/70 font-medium">{p.notes}</p>
+                    </div>
                   )}
                   {p.planAction && (
                     <div className={`mt-2 p-2 rounded-lg border ${p.planAction === "keep" ? "bg-emerald-500/5 border-emerald-500/20" : "bg-blue-500/5 border-blue-500/20"}`}>
