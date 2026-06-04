@@ -62,7 +62,7 @@ function paymentBadge(status: string) {
 }
 
 function safeDate(d: string) {
-  try { return format(new Date(d), "dd_MM_yy"); } catch { return d; }
+  try { return format(new Date(d), "dd-MM-yyyy"); } catch { return d; }
 }
 
 function subTypeLabel(t: string) {
