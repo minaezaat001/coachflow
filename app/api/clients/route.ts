@@ -88,6 +88,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "الاسم ورقم الهاتف والهدف مطلوبون" }, { status: 400 });
     }
 
+    const existingClient = await prisma.client.findUnique({ where: { phone: data.phone } });
+    if (existingClient) {
+      return NextResponse.json({ error: `رقم الهاتف "${data.phone}" مستخدم بالفعل للعميل "${existingClient.name}"` }, { status: 409 });
+    }
+
     const uniqueToken = crypto.randomBytes(16).toString("hex");
 
     const clientData: any = {
@@ -165,7 +170,12 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ client: { ...client, tags: parseTags(client.tags) } }, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: "حدث خطأ أثناء إنشاء العميل" }, { status: 500 });
+  } catch (error: any) {
+    console.error("Error creating client:", error?.message || error);
+    if (error?.code === "P2002") {
+      const field = error?.meta?.target?.[0] || "رقم الهاتف";
+      return NextResponse.json({ error: `البيانات المدخلة موجودة مسبقاً (${field})` }, { status: 409 });
+    }
+    return NextResponse.json({ error: error?.message || "حدث خطأ أثناء إنشاء العميل" }, { status: 500 });
   }
 }
