@@ -25,8 +25,8 @@ export function PdfUpload({ label, value, onChange }: PdfUploadProps) {
       setError("يجب رفع ملف PDF فقط")
       return
     }
-    if (file.size > 10 * 1024 * 1024) {
-      setError("حجم الملف يجب أن لا يتجاوز 10 ميجابايت")
+    if (file.size > 25 * 1024 * 1024) {
+      setError("حجم الملف يجب أن لا يتجاوز 25 ميجابايت")
       return
     }
 
@@ -143,7 +143,7 @@ export function PdfUpload({ label, value, onChange }: PdfUploadProps) {
               </div>
               <div className="text-center">
                 <span className="text-sm font-bold text-muted-foreground">اسحب ملف PDF هنا أو اضغط للاختيار</span>
-                <p className="text-[10px] text-muted-foreground/60 font-bold mt-1">PDF فقط - حد أقصى 10 ميجابايت</p>
+                <p className="text-[10px] text-muted-foreground/60 font-bold mt-1">PDF فقط - حد أقصى 25 ميجابايت</p>
               </div>
             </>
           )}
