@@ -439,20 +439,20 @@ export default function ClientDetail() {
       if (!res.ok) throw new Error("فشل تحديث المتابعة");
       return res.json();
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["followups", clientId] });
-      qc.invalidateQueries({ queryKey: ["client", clientId] });
-      toast({ title: "تم تحديد المتابعة كمنجز" });
+    onSuccess: async () => {
       const freq = parseInt(checkInFreq) || 7;
       const d = new Date();
       d.setDate(d.getDate() + freq);
       const nextDate = d.toISOString().split("T")[0];
       setNextCheckIn(nextDate);
-      fetch(`/api/clients/${clientId}`, {
+      await fetch(`/api/clients/${clientId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nextCheckInDate: nextDate }),
-      }).catch(() => {});
+      });
+      qc.invalidateQueries({ queryKey: ["followups", clientId] });
+      qc.invalidateQueries({ queryKey: ["client", clientId] });
+      toast({ title: "تم تحديد المتابعة كمنجز" });
     }
   });
 
@@ -715,7 +715,7 @@ export default function ClientDetail() {
                 <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">المتابعة القادمة</p>
               </div>
               <div className="text-lg font-black mb-1 leading-relaxed">
-                {client?.nextCheckInDate ? format(new Date(client.nextCheckInDate), "EEEE، d MMMM yyyy", { locale: arEG }) : "لم تحدد بعد"}
+                {(nextCheckIn || client?.nextCheckInDate) ? format(new Date(nextCheckIn || client?.nextCheckInDate), "EEEE، d MMMM yyyy", { locale: arEG }) : "لم تحدد بعد"}
               </div>
               <div className="text-xs font-bold text-muted-foreground">
                 {client?.nextCheckInDate ? `كل ${client?.defaultCheckInFrequency || 7} أيام` : "جدولة متابعة جديدة"}
@@ -1320,7 +1320,7 @@ export default function ClientDetail() {
                 </div>
                 <div>
                   <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">المتابعة القادمة</p>
-                  <p className="text-lg font-black">{client?.nextCheckInDate || "لم يتم تحديدها بعد"}</p>
+                  <p className="text-lg font-black">{nextCheckIn || client?.nextCheckInDate || "لم يتم تحديدها بعد"}</p>
                 </div>
               </div>
               <div className="text-left">
