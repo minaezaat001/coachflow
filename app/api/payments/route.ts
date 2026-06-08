@@ -57,6 +57,22 @@ export async function POST(req: Request) {
       const allPayments = await tx.payment.findMany({
         where: { clientId: data.clientId },
       });
+
+      // If payment settles the balance, mark old partial payments as fully paid
+      const totalPaid = allPayments
+        .filter((p) => p.status !== "unpaid")
+        .reduce((sum, p) => sum + (p.amount || 0), 0);
+      const activeSub = await tx.subscription.findFirst({
+        where: { clientId: data.clientId, status: "active" },
+      });
+      const subValue = activeSub?.price || 0;
+      if (totalPaid >= subValue && subValue > 0) {
+        await tx.payment.updateMany({
+          where: { clientId: data.clientId, status: "partial", amountRemaining: { gt: 0 } },
+          data: { amountRemaining: 0, status: "paid" },
+        });
+      }
+
       const derivedStatus = deriveClientPaymentStatus(allPayments);
       await tx.client.update({
         where: { id: data.clientId },

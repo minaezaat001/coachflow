@@ -68,6 +68,7 @@ model Client {
   notifications  Notification[]
   package        Package?       @relation(fields: [packageId], references: [id])
   clientNotifications ClientNotification[]
+  clientFiles         ClientFile[]
 }
 
 model Subscription {
@@ -139,6 +140,7 @@ model Todo {
   completed Boolean  @default(false)
   priority  String   @default("medium")
   dueDate   String?
+  repeat    String   @default("none")
   createdAt DateTime @default(now())
 
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -246,6 +248,19 @@ model Lead {
 
   coach   User     @relation(fields: [coachId], references: [id], onDelete: Cascade)
   package Package? @relation(fields: [selectedPackageId], references: [id])
+}
+
+model ClientFile {
+  id        Int      @id @default(autoincrement())
+  clientId  Int
+  name      String
+  url       String
+  type      String   @default("other")
+  createdAt DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
 }
 
 model Onboarding {

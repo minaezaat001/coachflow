@@ -15,10 +15,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "يجب رفع ملف PDF أو صورة (JPG, PNG, WebP) فقط" }, { status: 400 });
     }
 
-    const maxSize = file.type === "application/pdf" ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
+    const maxSize = 25 * 1024 * 1024;
     if (file.size > maxSize) {
-      const maxMb = maxSize / (1024 * 1024);
-      return NextResponse.json({ error: `حجم الملف يجب أن لا يتجاوز ${maxMb} ميجابايت` }, { status: 400 });
+      return NextResponse.json({ error: `حجم الملف يجب أن لا يتجاوز 25 ميجابايت` }, { status: 400 });
     }
 
     const response = await utapi.uploadFiles(file);

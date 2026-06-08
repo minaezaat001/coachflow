@@ -41,6 +41,7 @@ export async function POST(req: Request) {
         clientId: data.clientId ? parseInt(data.clientId) : null,
         priority: data.priority || "medium",
         dueDate: data.dueDate || null,
+        repeat: data.repeat || "none",
       },
     });
 

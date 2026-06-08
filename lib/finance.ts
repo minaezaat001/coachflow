@@ -40,16 +40,7 @@ export function calculateClientFinance(payments: PaymentRecord[], subscriptions:
     .filter((s) => s.status === "active")
     .reduce((sum, s) => sum + (s.price || 0), 0);
 
-  const explicitRemaining = payments
-    .filter((p) => p.status === "partial" || p.status === "unpaid")
-    .reduce((sum, p) => {
-      if (p.status === "partial") return sum + (p.amountRemaining || 0);
-      return sum + (p.amountRemaining ?? p.amount ?? 0);
-    }, 0);
-
-  const remainingBalance = explicitRemaining > 0
-    ? explicitRemaining
-    : Math.max(0, activeSubValue - totalPaid);
+  const remainingBalance = Math.max(0, activeSubValue - totalPaid);
 
   return {
     totalPaid: safeNumber(totalPaid),
@@ -71,18 +62,9 @@ export function calculateCoachFinanceSummary(payments: PaymentRecord[], activeSu
     .filter((p) => p.status !== "unpaid" && p.paidAt && p.paidAt >= startOfMonth && p.paidAt <= endOfMonth)
     .reduce((sum, p) => sum + (p.amount || 0), 0);
 
-  const explicitOutstanding = payments
-    .filter((p) => p.status === "partial" || p.status === "unpaid")
-    .reduce((sum, p) => {
-      if (p.status === "partial") return sum + (p.amountRemaining || 0);
-      return sum + (p.amountRemaining ?? p.amount ?? 0);
-    }, 0);
-
   const activeSubscriptionRevenue = activeSubscriptions.reduce((sum, s) => sum + (s.price || 0), 0);
 
-  const outstandingAmount = explicitOutstanding > 0
-    ? explicitOutstanding
-    : Math.max(0, activeSubscriptionRevenue - totalRevenue);
+  const outstandingAmount = Math.max(0, activeSubscriptionRevenue - totalRevenue);
 
   return {
     totalRevenue: safeNumber(totalRevenue),

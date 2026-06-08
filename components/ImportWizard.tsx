@@ -65,8 +65,8 @@ export default function ImportWizard() {
       toast({ title: "صيغة غير مدعومة. يرجى رفع ملف Excel أو CSV.", variant: "destructive" });
       return;
     }
-    if (f.size > 10 * 1024 * 1024) {
-      toast({ title: "حجم الملف يجب أن لا يتجاوز 10 ميجابايت", variant: "destructive" });
+    if (f.size > 25 * 1024 * 1024) {
+      toast({ title: "حجم الملف يجب أن لا يتجاوز 25 ميجابايت", variant: "destructive" });
       return;
     }
     setFile(f);

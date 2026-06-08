@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { RefreshCcw, Plus, Calendar, CreditCard, MessageSquare, FileText, Share2, Target, Scale, Ruler, History, Activity, User, Dumbbell, ClipboardList, Package, ExternalLink, ArrowRight, MessageCircle, Check, Clock, LayoutDashboard, DollarSign, CalendarCheck, Edit3 } from "lucide-react";
+import { RefreshCcw, Plus, Calendar, CreditCard, MessageSquare, FileText, Share2, Target, Scale, Ruler, History, Activity, User, Dumbbell, ClipboardList, Package, ExternalLink, ArrowRight, MessageCircle, Check, Clock, LayoutDashboard, DollarSign, CalendarCheck, Edit3, Upload, Loader2 } from "lucide-react";
 import { PlanFileManager } from "@/components/PlanFileManager";
 import { RenewalDialog } from "@/components/RenewalDialog";
 import { OnboardingDisplay } from "@/components/OnboardingDisplay";
@@ -138,6 +138,13 @@ const fetchOnboarding = async (clientId: string) => {
   return data.onboarding || [];
 };
 
+const fetchClientFiles = async (clientId: string) => {
+  const res = await fetch(`/api/clientfiles?clientId=${clientId}`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.files || [];
+};
+
 export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
   const clientId = id as string;
@@ -196,6 +203,12 @@ export default function ClientDetail() {
     enabled: !!clientId,
   });
 
+  const { data: clientFiles } = useQuery({
+    queryKey: ["clientFiles", clientId],
+    queryFn: () => fetchClientFiles(clientId),
+    enabled: !!clientId,
+  });
+
   const { data: allPackages } = useQuery({
     queryKey: ["packages-all"],
     queryFn: fetchPackages,
@@ -206,8 +219,22 @@ export default function ClientDetail() {
 
   useEffect(() => {
     if (client) {
-      setCheckInFreq(String(client.defaultCheckInFrequency || 7));
-      setNextCheckIn(client.nextCheckInDate || "");
+      const freq = client.defaultCheckInFrequency || 7;
+      setCheckInFreq(String(freq));
+      let nextDate = client.nextCheckInDate || "";
+      if (nextDate && nextDate < new Date().toISOString().split("T")[0]) {
+        const d = new Date();
+        d.setDate(d.getDate() + freq);
+        nextDate = d.toISOString().split("T")[0];
+        setNextCheckIn(nextDate);
+        fetch(`/api/clients/${clientId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nextCheckInDate: nextDate }),
+        }).catch(() => {});
+      } else {
+        setNextCheckIn(nextDate);
+      }
     }
   }, [client]);
 
@@ -323,6 +350,10 @@ export default function ClientDetail() {
   const [checkInSaving, setCheckInSaving] = useState(false);
   const manualDateRef = useRef(false);
   const [pkgChangeOpen, setPkgChangeOpen] = useState(false);
+  const [extraFileName, setExtraFileName] = useState("");
+  const [extraFile, setExtraFile] = useState<File | null>(null);
+  const [extraUploading, setExtraUploading] = useState(false);
+  const extraFileRef = useRef<HTMLInputElement>(null);
   const [selectedNewPackageId, setSelectedNewPackageId] = useState("");
   const [pkgChangeDate, setPkgChangeDate] = useState(new Date().toISOString().split("T")[0]);
 
@@ -410,9 +441,52 @@ export default function ClientDetail() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["followups", clientId] });
+      qc.invalidateQueries({ queryKey: ["client", clientId] });
       toast({ title: "تم تحديد المتابعة كمنجز" });
+      const freq = parseInt(checkInFreq) || 7;
+      const d = new Date();
+      d.setDate(d.getDate() + freq);
+      const nextDate = d.toISOString().split("T")[0];
+      setNextCheckIn(nextDate);
+      fetch(`/api/clients/${clientId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nextCheckInDate: nextDate }),
+      }).catch(() => {});
     }
   });
+
+  const handleExtraUpload = async () => {
+    if (!extraFile || !extraFileName.trim()) {
+      toast({ title: "اختر ملفاً وأدخل اسم الملف", variant: "destructive" });
+      return;
+    }
+    if (extraFile.size > 25 * 1024 * 1024) {
+      toast({ title: "حجم الملف يجب أن لا يتجاوز 25 ميجابايت", variant: "destructive" });
+      return;
+    }
+    setExtraUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", extraFile);
+      fd.append("clientId", clientId);
+      fd.append("field", "extra");
+      const uploadRes = await fetch("/api/upload", { method: "POST", body: fd });
+      if (!uploadRes.ok) { const err = await uploadRes.json(); throw new Error(err.error || "فشل رفع الملف"); }
+      const { url } = await uploadRes.json();
+      await fetch("/api/clientfiles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId: parseInt(clientId), url, name: extraFileName.trim(), type: "other" }),
+      });
+      toast({ title: "تم رفع الملف الإضافي" });
+      setExtraFileName(""); setExtraFile(null);
+      if (extraFileRef.current) extraFileRef.current.value = "";
+      qc.invalidateQueries({ queryKey: ["clientFiles", clientId] });
+    } catch (err: any) {
+      toast({ title: err.message || "حدث خطأ", variant: "destructive" });
+    } finally { setExtraUploading(false); }
+  };
 
   if (isLoading) {
     return (
@@ -752,7 +826,7 @@ export default function ClientDetail() {
                   </div>
                   <Button className="w-full h-12 rounded-lg font-black mt-2 text-sm" onClick={() => {
                     if (!subEnd) return toast({ title: "حدد تاريخ النهاية", variant: "destructive" });
-                    const data = { clientId, type: subType, startDate: subStart, endDate: subEnd, price: subPrice ? parseFloat(subPrice) : undefined, status: subStatus };
+                    const data = { clientId, type: subType, startDate: subStart, endDate: subEnd, price: subPrice ? Math.round(parseFloat(subPrice)) : undefined, status: subStatus };
                     if (editingSub) {
                       updateSubMutation.mutate({ subId: editingSub.id, data });
                     } else {
@@ -1342,7 +1416,7 @@ export default function ClientDetail() {
           )}
         </TabsContent>
 
-        <TabsContent value="plans" className="mt-2 space-y-4">
+        <TabsContent value="plans" className="mt-2 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="rounded-xl bg-card shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] p-5 space-y-4">
               <div className="flex items-center gap-2.5">
@@ -1357,7 +1431,7 @@ export default function ClientDetail() {
                 title="نظام التغذية"
                 icon={<FileText className="w-4 h-4" />}
                 accent="energy"
-                onUpdate={() => qc.invalidateQueries({ queryKey: ["client", clientId] })}
+                onUpdate={() => { qc.invalidateQueries({ queryKey: ["client", clientId] }); qc.invalidateQueries({ queryKey: ["clientFiles", clientId] }); }}
               />
             </div>
             <div className="rounded-xl bg-card shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] p-5 space-y-4">
@@ -1373,9 +1447,91 @@ export default function ClientDetail() {
                 title="نظام التمرين"
                 icon={<Dumbbell className="w-4 h-4" />}
                 accent="primary"
-                onUpdate={() => qc.invalidateQueries({ queryKey: ["client", clientId] })}
+                onUpdate={() => { qc.invalidateQueries({ queryKey: ["client", clientId] }); qc.invalidateQueries({ queryKey: ["clientFiles", clientId] }); }}
               />
             </div>
+          </div>
+
+          <div className="rounded-xl bg-card shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] p-5 space-y-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-1 h-5 rounded-full bg-purple-500" />
+              <h3 className="text-sm font-semibold">ملفات إضافية</h3>
+            </div>
+            <div className="flex items-end gap-2">
+              <div className="flex-1 space-y-1.5">
+                <Label className="text-[10px] font-bold text-muted-foreground">اسم الملف</Label>
+                <Input
+                  value={extraFileName}
+                  onChange={(e) => setExtraFileName(e.target.value)}
+                  placeholder="مثال: شهادة طبية"
+                  className="h-10 rounded-xl bg-muted/20 border-border/50"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold text-muted-foreground opacity-0">رفع</Label>
+                <input ref={extraFileRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) setExtraFile(f); }} />
+                <Button variant="outline" size="sm" className="h-10 rounded-xl" onClick={() => extraFileRef.current?.click()}>
+                  {extraFile ? extraFile.name.slice(0, 20) : "اختيار ملف"}
+                </Button>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold text-muted-foreground opacity-0">رفع</Label>
+                <Button size="sm" className="h-10 rounded-xl gap-1.5" onClick={handleExtraUpload} disabled={extraUploading || !extraFile}>
+                  {extraUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                  رفع
+                </Button>
+              </div>
+            </div>
+            {(clientFiles as any[])?.filter((f: any) => f.type === "other").length > 0 && (
+              <div className="space-y-2 pt-2">
+                {(clientFiles as any[])?.filter((f: any) => f.type === "other").map((f: any) => (
+                  <div key={f.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/10 border border-border/30">
+                    <FileText className="w-4 h-4 text-purple-500 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium truncate">{f.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{safeDate(f.createdAt)}</p>
+                    </div>
+                    <a href={f.url} target="_blank" rel="noopener noreferrer">
+                      <Button variant="ghost" size="icon" className="w-7 h-7">
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </Button>
+                    </a>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-xl bg-card shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] p-5 space-y-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-1 h-5 rounded-full bg-blue-500" />
+              <h3 className="text-sm font-semibold">سجل التعديلات</h3>
+            </div>
+            {(clientFiles as any[])?.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-6">لا توجد تعديلات سابقة</p>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {(clientFiles as any[])?.slice().sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((f: any) => (
+                  <div key={f.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/10 border border-border/30">
+                    <div className={cn(
+                      "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                      f.type === "diet" ? "bg-energy/10" : f.type === "workout" ? "bg-primary/10" : "bg-purple-500/10"
+                    )}>
+                      <FileText className={cn("w-4 h-4", f.type === "diet" ? "text-energy" : f.type === "workout" ? "text-primary" : "text-purple-500")} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium truncate">{f.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{safeDate(f.createdAt)}</p>
+                    </div>
+                    <a href={f.url} target="_blank" rel="noopener noreferrer">
+                      <Button variant="ghost" size="icon" className="w-7 h-7" title="عرض">
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </Button>
+                    </a>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </TabsContent>
       </Tabs>

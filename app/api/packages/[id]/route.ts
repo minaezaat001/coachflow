@@ -17,7 +17,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       where: { id },
       data: {
         ...(data.name !== undefined && { name: data.name }),
-        ...(data.price !== undefined && { price: parseFloat(data.price) }),
+        ...(data.price !== undefined && { price: Math.round(parseFloat(data.price)) }),
         ...(data.durationMonths !== undefined && { durationMonths: parseInt(data.durationMonths) }),
         ...(data.defaultCheckInFrequency !== undefined && { defaultCheckInFrequency: parseInt(data.defaultCheckInFrequency) }),
         ...(data.packageType !== undefined && { packageType: data.packageType }),

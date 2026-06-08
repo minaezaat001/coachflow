@@ -34,6 +34,7 @@ interface Todo {
   client?: { id: number; name: string };
   clientName?: string;
   dueDate?: string;
+  repeat: string;
   createdAt: any;
 }
 
@@ -75,6 +76,7 @@ export default function Todos() {
   const [clientId, setClientId] = useState("none");
   const [priority, setPriority] = useState("medium");
   const [dueDate, setDueDate] = useState("");
+  const [repeat, setRepeat] = useState("none");
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -90,7 +92,7 @@ export default function Todos() {
       qc.invalidateQueries({ queryKey: ["todos"] });
       toast({ title: "تم إضافة المهمة" });
       setAddOpen(false);
-      setTitle(""); setClientId("none"); setDueDate("");
+      setTitle(""); setClientId("none"); setDueDate(""); setRepeat("none");
     }
   });
 
@@ -193,6 +195,18 @@ export default function Todos() {
                 <Label className="text-xs text-muted-foreground">تاريخ الاستحقاق</Label>
                 <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
               </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">التكرار</Label>
+                <Select value={repeat} onValueChange={setRepeat}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">مرة واحدة</SelectItem>
+                    <SelectItem value="daily">يومي</SelectItem>
+                    <SelectItem value="weekly">أسبوعي</SelectItem>
+                    <SelectItem value="monthly">شهري</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <Button className="w-full" onClick={() => {
                 if (!title.trim()) return toast({ title: "أدخل عنوان المهمة", variant: "destructive" });
                 const client = clients?.find((c: any) => c.id === clientId);
@@ -202,6 +216,7 @@ export default function Todos() {
                   clientName: client ? (client as any).name : undefined,
                   priority,
                   dueDate: dueDate || undefined,
+                  repeat,
                   completed: false
                 });
               }} disabled={createMutation.isPending}>
@@ -243,7 +258,7 @@ export default function Todos() {
             <div
               key={t.id}
               className={cn(
-                "flex items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/30 first:rounded-t-xl last:rounded-b-xl animate-fade-up",
+                "flex items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/30 first:rounded-t-xl last:rounded-b-xl animate-fade-up group",
                 t.completed && "opacity-50"
               )}
               style={{ animationDelay: `${i * 0.03}s` }}
@@ -268,6 +283,11 @@ export default function Todos() {
                   <Badge variant={t.priority === "high" ? "destructive" : t.priority === "medium" ? "warning" : "secondary"} className="text-[10px] px-1.5 py-0">
                     {t.priority === "high" ? "عالي" : t.priority === "medium" ? "متوسط" : "منخفض"}
                   </Badge>
+                  {t.repeat && t.repeat !== "none" && (
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-blue-500/30 text-blue-600">
+                      {t.repeat === "daily" ? "يومي" : t.repeat === "weekly" ? "أسبوعي" : t.repeat === "biweekly" ? "كل أسبوعين" : "شهري"}
+                    </Badge>
+                  )}
                   {t.clientName && (
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <User className="w-3 h-3" />
@@ -285,7 +305,7 @@ export default function Todos() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-8 h-8 text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100"
+                className="w-8 h-8 text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                 onClick={() => deleteMutation.mutate(t.id)}
               >
                 <Trash2 className="w-4 h-4" />

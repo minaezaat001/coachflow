@@ -35,7 +35,7 @@ export async function POST(req: Request) {
       data: {
         coachId: user.id,
         name: data.name,
-        price: parseFloat(data.price),
+        price: Math.round(parseFloat(data.price)),
         durationMonths: parseInt(data.durationMonths),
         defaultCheckInFrequency: data.defaultCheckInFrequency ? parseInt(data.defaultCheckInFrequency) : 7,
         packageType: data.packageType,

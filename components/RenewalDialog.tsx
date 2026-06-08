@@ -92,7 +92,7 @@ export function RenewalDialog({ open, onOpenChange, client, lastSubscription }: 
       type,
       startDate,
       endDate,
-      price: price ? parseFloat(price) : undefined,
+      price: price ? Math.round(parseFloat(price)) : undefined,
       status: "active",
     }
 

@@ -105,7 +105,7 @@ function ClientNewForm() {
     if (packageId) {
       const pkg = activePackages.find((p) => p.id === parseInt(packageId))
       if (pkg) {
-        setValue("subscriptionPrice", String(pkg.price))
+        setValue("subscriptionPrice", String(Math.round(pkg.price)))
         setValue("subscriptionDuration", String(pkg.durationMonths))
         const typeMap: Record<string, string> = {
           training: "نظام تدريبي فقط",

@@ -266,7 +266,7 @@ export default function PackagesPage() {
                       {typeLabels[pkg.packageType] || pkg.packageType}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => openEdit(pkg)}
                       className="w-8 h-8 rounded-lg bg-muted/10 hover:bg-primary/10 hover:text-primary flex items-center justify-center transition-all"

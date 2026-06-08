@@ -128,7 +128,7 @@ export async function POST(req: Request) {
           type: data.subscriptionType,
           startDate: data.subscriptionStartDate,
           endDate: data.subscriptionEndDate,
-          price: data.subscriptionPrice ? parseFloat(data.subscriptionPrice) : null,
+          price: data.subscriptionPrice ? Math.round(parseFloat(data.subscriptionPrice)) : null,
           status: "active",
         },
       });

@@ -105,7 +105,7 @@ export async function POST(req: Request) {
               type: mapped.subscriptionType || "monthly",
               startDate: mapped.subscriptionStartDate,
               endDate: mapped.subscriptionEndDate,
-              price: parseFloat(mapped.subscriptionPrice),
+              price: Math.round(parseFloat(mapped.subscriptionPrice)),
               status: "active",
             },
           });

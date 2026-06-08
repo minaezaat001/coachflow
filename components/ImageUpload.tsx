@@ -98,7 +98,7 @@ export function ImageUpload({ label, value, onChange }: ImageUploadProps) {
       {currentUrl ? (
         <div className="relative group rounded-xl overflow-hidden border-2 border-border/40 bg-muted/10">
           <img src={currentUrl} alt={label} className="w-full h-36 object-cover" />
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+          <div className="absolute inset-0 bg-black/0 sm:group-hover:bg-black/40 transition-all flex items-center justify-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
             <a href={currentUrl} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-lg bg-white/90 flex items-center justify-center text-foreground hover:bg-white transition-all">
               <ImageIcon className="w-4 h-4" />
             </a>

@@ -60,10 +60,8 @@ export function PlanFileManager({
       return
     }
 
-    const maxSize = file.type === "application/pdf" ? 10 * 1024 * 1024 : 5 * 1024 * 1024
-    if (file.size > maxSize) {
-      const maxMb = maxSize / (1024 * 1024)
-      toast({ title: `حجم الملف يجب أن لا يتجاوز ${maxMb} ميجابايت`, variant: "destructive" })
+    if (file.size > 25 * 1024 * 1024) {
+      toast({ title: "حجم الملف يجب أن لا يتجاوز 25 ميجابايت", variant: "destructive" })
       return
     }
 
@@ -92,6 +90,11 @@ export function PlanFileManager({
         throw new Error("فشل تحديث بيانات العميل")
       }
 
+      await fetch("/api/clientfiles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId, url, name: title, type: field === "dietPlanUrl" ? "diet" : "workout" }),
+      })
       toast({ title: `تم رفع ${title}` })
       onUpdate()
     } catch (error: any) {
@@ -221,7 +224,7 @@ export function PlanFileManager({
               </div>
               <div>
                 <p className="text-sm font-medium text-foreground">رفع {title}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">PDF أو صورة — حد أقصى 10 ميجابايت</p>
+                <p className="text-xs text-muted-foreground mt-0.5">PDF أو صورة — حد أقصى 25 ميجابايت</p>
               </div>
             </div>
           )}

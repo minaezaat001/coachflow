@@ -46,7 +46,7 @@ export async function POST(req: Request) {
           type: data.type,
           startDate: data.startDate,
           endDate: data.endDate,
-          price: data.price ? parseFloat(data.price) : null,
+          price: data.price ? Math.round(parseFloat(data.price)) : null,
           status: data.status || "active",
         },
       });
