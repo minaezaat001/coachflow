@@ -83,6 +83,15 @@ export async function POST(req: Request) {
       });
     }
 
+    const clientData = await prisma.client.findUnique({ where: { id: data.clientId }, select: { defaultCheckInFrequency: true } });
+    const freqDays = clientData?.defaultCheckInFrequency ?? 7;
+    const nextDate = new Date();
+    nextDate.setDate(nextDate.getDate() + freqDays);
+    await prisma.client.update({
+      where: { id: data.clientId },
+      data: { nextCheckInDate: nextDate.toISOString().split("T")[0] },
+    });
+
     await createNotification({
       coachId: client.coachId,
       clientId: client.id,

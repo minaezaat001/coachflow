@@ -6,9 +6,12 @@ import { Providers } from "@/components/providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "coachflow - نظام إدارة الجيم",
-  description: "نظام متكامل لإدارة النوادي الرياضية والمدربين الشخصيين",
-  icons: { icon: "/assets/logo.png" },
+  title: "CoachFlow - نظام إدارة النوادي الرياضية",
+  description: "منصة متكاملة لإدارة النوادي الرياضية والمدربين الشخصيين: متابعة العملاء، الاشتراكات، المدفوعات، والتمارين",
+  icons: { icon: "/assets/logo.png", apple: "/assets/logo.png" },
+  manifest: "/manifest.json",
+  appleWebApp: { capable: true, title: "CoachFlow", statusBarStyle: "black-translucent" },
+  themeColor: "#0f172a",
 };
 
 export default function RootLayout({

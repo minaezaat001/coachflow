@@ -88,7 +88,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "الاسم ورقم الهاتف والهدف مطلوبون" }, { status: 400 });
     }
 
-    const existingClient = await prisma.client.findUnique({ where: { phone: data.phone } });
+    const existingClient = await prisma.client.findFirst({ where: { phone: data.phone, coachId: user.id } });
     if (existingClient) {
       return NextResponse.json({ error: `رقم الهاتف "${data.phone}" مستخدم بالفعل للعميل "${existingClient.name}"` }, { status: 409 });
     }

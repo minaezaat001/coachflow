@@ -71,7 +71,7 @@ export async function POST(req: Request) {
       if (!mapped.goal) mapped.goal = "عام";
 
       // Check duplicate phone
-      const existing = await prisma.client.findUnique({ where: { phone: mapped.phone } });
+      const existing = await prisma.client.findFirst({ where: { phone: mapped.phone, coachId: user.id } });
       if (existing) {
         results.push({ success: false, row: i + 2, name: mapped.name, error: `رقم الهاتف موجود مسبقاً للعميل ${existing.name}` });
         continue;

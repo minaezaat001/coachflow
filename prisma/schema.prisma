@@ -34,7 +34,7 @@ model Client {
   id                   Int       @id @default(autoincrement())
   coachId              String
   name                 String
-  phone                String    @unique
+  phone                String
   goal                 String
   weight               Float?
   height               Float?
@@ -69,6 +69,8 @@ model Client {
   package        Package?       @relation(fields: [packageId], references: [id])
   clientNotifications ClientNotification[]
   clientFiles         ClientFile[]
+
+  @@unique([phone, coachId])
 }
 
 model Subscription {

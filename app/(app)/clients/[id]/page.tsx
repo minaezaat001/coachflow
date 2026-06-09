@@ -881,7 +881,7 @@ export default function ClientDetail() {
             onOpenChange={setPayOpen}
             clientId={parseInt(clientId)}
             clientName={client?.name || ""}
-            onSuccess={() => { qc.invalidateQueries({ queryKey: ["payments", clientId] }); qc.invalidateQueries({ queryKey: ["client", clientId] }); }}
+            onSuccess={() => { qc.invalidateQueries({ queryKey: ["payments", clientId] }); qc.refetchQueries({ queryKey: ["client", clientId] }); }}
           />
           <div className="premium-shadow rounded-[2rem] border border-border bg-card/40 backdrop-blur-md p-6">
             <div className="grid grid-cols-3 gap-4">

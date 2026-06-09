@@ -142,7 +142,7 @@ export function PaymentModal({ open, onOpenChange, clientId, clientName, existin
       qc.invalidateQueries({ queryKey: ["payments", String(clientId)] })
       qc.invalidateQueries({ queryKey: ["subscriptions"] })
       qc.invalidateQueries({ queryKey: ["subscriptions", String(clientId)] })
-      qc.invalidateQueries({ queryKey: ["client", String(clientId)] })
+      qc.refetchQueries({ queryKey: ["client", String(clientId)] })
       qc.invalidateQueries({ queryKey: ["financialSummary"] })
       qc.invalidateQueries({ queryKey: ["dashboardSummary"] })
       toast({ title: existingPaymentId ? "✅ تم تحصيل المبلغ بنجاح" : "✅ تم تسجيل الدفعة بنجاح" })

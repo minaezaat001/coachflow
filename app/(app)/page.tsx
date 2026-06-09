@@ -16,6 +16,8 @@ import {
   ListTodo,
   ArrowUpRight,
   Target,
+  Link2,
+  Check,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
@@ -25,6 +27,7 @@ import { RenewalDialog } from "@/components/RenewalDialog";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/components/auth-context";
 
 const fetchSummary = async () => {
   const res = await fetch("/api/dashboard/summary");
@@ -124,10 +127,12 @@ const StatCard = ({
 };
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const { data: summary, isLoading: loadingSummary } = useQuery({
     queryKey: ["dashboardSummary"],
     queryFn: fetchSummary,
   });
+  const [copied, setCopied] = React.useState(false);
   const { data: followups, isLoading: loadingFollowups } = useQuery({
     queryKey: ["todayFollowups"],
     queryFn: fetchTodayFollowups,
@@ -167,6 +172,17 @@ export default function Dashboard() {
                 : "ابدأ يومك بمتابعة عملائك"}
             </p>
           </div>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(`${window.location.origin}/pricing/${user?.id || ""}`);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            }}
+            className="flex items-center gap-2 px-4 h-10 rounded-xl bg-primary/5 border border-primary/10 text-primary hover:bg-primary/10 transition-all text-xs font-black shrink-0"
+          >
+            {copied ? <Check className="w-4 h-4" /> : <Link2 className="w-4 h-4" />}
+            {copied ? "تم النسخ!" : "طلب اشتراك جديد"}
+          </button>
 
         </div>
       </div>

@@ -25,6 +25,17 @@ import {
 import { Button } from "./ui/button"
 import { NotificationBell } from "./NotificationBell"
 import { useAuth } from "./auth-context"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 const navItems = [
   { href: "/",             label: "لوحة التحكم",       icon: LayoutDashboard },
@@ -41,18 +52,11 @@ const navItems = [
 function NavContent({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname()
   const { user, signOut } = useAuth()
-  const [copied, setCopied] = useState(false)
   const [whatsapp, setWhatsapp] = useState("")
 
   React.useEffect(() => {
     fetch("/api/public/coach").then(r => r.json()).then(d => { if (d.whatsapp) setWhatsapp(d.whatsapp) }).catch(() => {})
   }, [])
-
-  const copyPricingLink = () => {
-    navigator.clipboard.writeText(`${window.location.origin}/pricing/${user?.id || ""}`)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
 
   return (
     <div className="flex flex-col h-full bg-sidebar">
@@ -105,20 +109,6 @@ function NavContent({ onClose }: { onClose?: () => void }) {
       </div>
 
       <div className="px-3 pb-3 space-y-0.5">
-        <button
-          onClick={copyPricingLink}
-          className="w-full flex items-center gap-3 px-3 h-9 rounded-lg text-sm text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all"
-        >
-          <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            {copied ? (
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-            )}
-          </svg>
-          <span className="text-xs">{copied ? "تم النسخ!" : "رابط التسجيل"}</span>
-        </button>
-
         {whatsapp && (
           <Link href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(`مرحباً ${user?.name || "المدرب"}، أحتاج إلى مساعدة بخصوص حسابي في CoachFlow`)}`} target="_blank" rel="noopener noreferrer">
             <div className="w-full flex items-center gap-3 px-3 h-9 rounded-lg text-sm text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all">
@@ -129,13 +119,30 @@ function NavContent({ onClose }: { onClose?: () => void }) {
         )}
 
         <div className="pt-2 mt-2 border-t border-sidebar-border/50">
-          <button
-            onClick={signOut}
-            className="w-full flex items-center gap-3 px-3 h-9 rounded-lg text-sm text-sidebar-foreground/40 hover:text-red-400 hover:bg-sidebar-accent/50 transition-all"
-          >
-            <LogOut className="w-4 h-4 shrink-0" />
-            <span className="text-xs truncate">{user?.email || "تسجيل الخروج"}</span>
-          </button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button
+                className="w-full flex items-center gap-3 px-3 h-9 rounded-lg text-sm text-sidebar-foreground/40 hover:text-red-400 hover:bg-sidebar-accent/50 transition-all"
+              >
+                <LogOut className="w-4 h-4 shrink-0" />
+                <span className="text-xs truncate">{user?.email || "تسجيل الخروج"}</span>
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="rounded-2xl">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-lg font-black">تسجيل الخروج</AlertDialogTitle>
+                <AlertDialogDescription className="text-sm font-medium">
+                  هل أنت متأكد من تسجيل الخروج؟ سيتم إنهاء جلستك الحالية.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="rounded-xl font-bold">إلغاء</AlertDialogCancel>
+                <AlertDialogAction onClick={signOut} className="rounded-xl font-bold bg-red-500 hover:bg-red-600">
+                  تأكيد
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
     </div>
