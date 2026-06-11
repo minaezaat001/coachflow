@@ -393,19 +393,7 @@ export default function ClientDashboard() {
                     {p.notes || "تم تسجيل المتابعة بنجاح بدون ملاحظات إضافية."}
                   </p>
                   </p>
-                  {p.planAction && (
-                    <div className={cn(
-                      "mt-3 p-3 rounded-xl border",
-                      p.planAction === "keep" ? "bg-emerald-500/5 border-emerald-500/20" : "bg-blue-500/5 border-blue-500/20"
-                    )}>
-                      <p className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-wide mb-1">
-                        {p.planAction === "keep" ? "✅ تم تثبيت الخطة" : "🔄 تم تعديل الخطة"}
-                      </p>
-                      {p.coachComment && (
-                        <p className="text-xs font-bold">{p.coachComment}</p>
-                      )}
-                    </div>
-                  )}
+
                 </div>
               ))
             ) : (

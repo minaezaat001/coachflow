@@ -124,13 +124,6 @@ const fetchWorkoutLogs = async (clientId: string) => {
   return data.workoutLogs || [];
 };
 
-const fetchFollowups = async (clientId: string) => {
-  const res = await fetch(`/api/followups?clientId=${clientId}`);
-  if (!res.ok) throw new Error("فشل جلب المتابعات");
-  const data = await res.json();
-  return data.followups || [];
-};
-
 const fetchOnboarding = async (clientId: string) => {
   const res = await fetch(`/api/onboarding?clientId=${clientId}`);
   if (!res.ok) throw new Error("فشل جلب بيانات التسجيل");
@@ -185,11 +178,6 @@ export default function ClientDetail() {
   const { data: exercises } = useQuery({
     queryKey: ["exercises", clientId],
     queryFn: () => fetchExercises(clientId),
-    enabled: !!clientId,
-  });
-  const { data: followups } = useQuery({
-    queryKey: ["followups", clientId],
-    queryFn: () => fetchFollowups(clientId),
     enabled: !!clientId,
   });
   const { data: workoutLogs } = useQuery({
@@ -341,10 +329,6 @@ export default function ClientDetail() {
   const [progBodyFat, setProgBodyFat] = useState("");
   const [progWaist, setProgWaist] = useState("");
   const [progDate, setProgDate] = useState(new Date().toISOString().split("T")[0]);
-  const [reviewDialog, setReviewDialog] = useState<number | null>(null);
-  const [reviewAction, setReviewAction] = useState<string>("keep");
-  const [reviewComment, setReviewComment] = useState("");
-  const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [checkInFreq, setCheckInFreq] = useState("7");
   const [nextCheckIn, setNextCheckIn] = useState("");
   const [checkInSaving, setCheckInSaving] = useState(false);
@@ -409,50 +393,6 @@ export default function ClientDetail() {
       qc.invalidateQueries({ queryKey: ["exercises", clientId] });
       toast({ title: "تم تسجيل الجلسة بنجاح" });
       setExOpen(false);
-    }
-  });
-
-  const [fuOpen, setFuOpen] = useState(false);
-  const [fuType, setFuType] = useState("daily");
-  const [fuDate, setFuDate] = useState(new Date().toISOString().split("T")[0]);
-  const [fuNotes, setFuNotes] = useState("");
-
-  const createFuMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await fetch("/api/followups", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error("فشل جدولة المتابعة");
-      return res.json();
-    },
-  });
-
-  const updateFuMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await fetch(`/api/followups/${data.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ completed: true, completedAt: new Date().toISOString() }),
-      });
-      if (!res.ok) throw new Error("فشل تحديث المتابعة");
-      return res.json();
-    },
-    onSuccess: async () => {
-      const freq = parseInt(checkInFreq) || 7;
-      const d = new Date();
-      d.setDate(d.getDate() + freq);
-      const nextDate = d.toISOString().split("T")[0];
-      setNextCheckIn(nextDate);
-      await fetch(`/api/clients/${clientId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nextCheckInDate: nextDate }),
-      });
-      qc.invalidateQueries({ queryKey: ["followups", clientId] });
-      qc.invalidateQueries({ queryKey: ["client", clientId] });
-      toast({ title: "تم تحديد المتابعة كمنجز" });
     }
   });
 
@@ -1050,87 +990,7 @@ export default function ClientDetail() {
                   <p className="text-sm text-muted-foreground/70 font-medium leading-relaxed border-t border-border/20 pt-3">{p.notes}</p>
                 )}
 
-                {p.planAction ? (
-                  <div className={cn(
-                    "p-3 rounded-xl border",
-                    p.planAction === "keep" ? "bg-emerald-500/5 border-emerald-500/20" : "bg-blue-500/5 border-blue-500/20"
-                  )}>
-                    <p className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-wide mb-1">
-                      {p.planAction === "keep" ? "✅ تم تثبيت الخطة" : "🔄 تم تعديل الخطة"}
-                    </p>
-                    {p.coachComment && <p className="text-sm font-bold">{p.coachComment}</p>}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 pt-2 border-t border-border/20">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-9 flex-1 rounded-xl font-black text-xs gap-1.5 border-emerald-500/20 text-emerald-500 hover:bg-emerald-500 hover:text-white"
-                      onClick={() => { setReviewAction("keep"); setReviewComment(""); setReviewDialog(p.id) }}
-                    >
-                      <Check className="w-4 h-4" />
-                      تثبيت الخطة
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-9 flex-1 rounded-xl font-black text-xs gap-1.5 border-blue-500/20 text-blue-500 hover:bg-blue-500 hover:text-white"
-                      onClick={() => { setReviewAction("modify"); setReviewComment(""); setReviewDialog(p.id) }}
-                    >
-                      <Edit3 className="w-4 h-4" />
-                      تعديل الخطة
-                    </Button>
-                    <Dialog open={reviewDialog === p.id} onOpenChange={(o) => setReviewDialog(o ? p.id : null)}>
-                      <DialogContent className="rounded-2xl border-border bg-card/95 backdrop-blur-xl sm:max-w-md">
-                        <DialogHeader>
-                          <DialogTitle className="text-lg font-black">{reviewAction === "keep" ? "تثبيت الخطة الحالية" : "تعديل الخطة"}</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4 pt-2">
-                          <p className="text-sm text-muted-foreground font-medium">
-                            {reviewAction === "keep"
-                              ? "سيتم إرسال تعليقك للعميل مع تحديث تاريخ المتابعة القادمة تلقائياً."
-                              : "سيتم إعلام العميل بتعديل الخطة مع تعليقك التشجيعي."}
-                          </p>
-                          <div className="space-y-2">
-                            <Label className="font-black text-[10px] uppercase tracking-widest opacity-70">تعليق المدرب</Label>
-                            <Textarea
-                              value={reviewComment}
-                              onChange={(e) => setReviewComment(e.target.value)}
-                              placeholder={reviewAction === "keep" ? "أحسنت! استمر بنفس القوة 💪" : "تم تعديل الخطة بناءً على ملاحظاتك..."}
-                              rows={3}
-                              className="rounded-2xl border-border/50"
-                            />
-                          </div>
-                          <Button
-                            className="w-full h-12 rounded-xl font-black"
-                            disabled={reviewSubmitting}
-                            onClick={async () => {
-                              setReviewSubmitting(true)
-                              try {
-                                await fetch(`/api/progress/${p.id}`, {
-                                  method: "PATCH",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ planAction: reviewAction, coachComment: reviewComment || null }),
-                                })
-                                toast({ title: reviewAction === "keep" ? "تم تثبيت الخطة" : "تم تعديل الخطة" })
-                                setReviewDialog(null)
-                                setReviewComment("")
-                                qc.invalidateQueries({ queryKey: ["progress", clientId] })
-                                qc.invalidateQueries({ queryKey: ["client", clientId] })
-                              } catch {
-                                toast({ title: "حدث خطأ", variant: "destructive" })
-                              } finally {
-                                setReviewSubmitting(false)
-                              }
-                            }}
-                          >
-                            {reviewSubmitting ? "جاري..." : reviewAction === "keep" ? "تثبيت الخطة" : "تعديل الخطة"}
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                )}
+
               </div>
             ))}
           </div>
@@ -1227,85 +1087,6 @@ export default function ClientDetail() {
         </TabsContent>
 
         <TabsContent value="followups" className="mt-2 space-y-4">
-          <div className="flex justify-end">
-            <Dialog open={fuOpen} onOpenChange={setFuOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="h-10 px-4 rounded-lg gap-2 font-black bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white transition-all text-[10px] uppercase tracking-widest">
-                  <Plus className="w-4 h-4" />
-                  جدولة متابعة
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="rounded-2xl border-border bg-card/95 backdrop-blur-xl p-8">
-                <DialogHeader><DialogTitle className="text-xl font-black">جدولة مهمة متابعة</DialogTitle></DialogHeader>
-                <div className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label className="font-black text-[10px] uppercase tracking-widest opacity-70">نوع المتابعة</Label>
-                    <Select value={fuType} onValueChange={setFuType}>
-                      <SelectTrigger className="h-11 rounded-lg bg-muted/30"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="daily">يومية</SelectItem>
-                        <SelectItem value="weekly">أسبوعية</SelectItem>
-                        <SelectItem value="monthly">شهرية</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="font-black text-[10px] uppercase tracking-widest opacity-70">تاريخ الجدولة</Label>
-                    <Input type="date" className="h-11 rounded-lg bg-muted/30" value={fuDate} onChange={e => setFuDate(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="font-black text-[10px] uppercase tracking-widest opacity-70">ملاحظات للمتابعة</Label>
-                    <Textarea value={fuNotes} onChange={e => setFuNotes(e.target.value)} className="rounded-xl bg-muted/30 min-h-[100px]" placeholder="مثلاً: متابعة الوزن والنظام الغذائي..." />
-                  </div>
-                  <Button className="w-full h-12 rounded-lg font-black mt-2 text-sm bg-amber-500 text-white hover:bg-amber-600" onClick={async () => {
-                    try {
-                      await createFuMutation.mutateAsync({ clientId, type: fuType, scheduledAt: fuDate, notes: fuNotes, completed: false });
-                      qc.invalidateQueries({ queryKey: ["followups", clientId] });
-                      qc.invalidateQueries({ queryKey: ["client", clientId] });
-                      qc.invalidateQueries({ queryKey: ["todayFollowups"] });
-                      qc.invalidateQueries({ queryKey: ["dashboardSummary"] });
-                      refreshNotifications();
-                      toast({ title: "تم جدولة المتابعة بنجاح" });
-                      setFuOpen(false);
-                    } catch {
-                      toast({ title: "فشل جدولة المتابعة", variant: "destructive" });
-                    }
-                  }} disabled={createFuMutation.isPending}>
-                    {createFuMutation.isPending ? "جاري الحفظ..." : "تأكيد الجدولة"}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-          {(followups as any[])?.length === 0 ? (
-            <div className="text-center py-16 bg-muted/10 rounded-3xl border border-dashed border-border/50">
-              <CalendarCheck className="w-10 h-10 text-muted-foreground/20 mx-auto mb-3" />
-              <p className="text-xs sm:text-sm font-black text-muted-foreground opacity-70">لا توجد متابعات مجدولة</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-3.5">
-              {(followups as any[])?.map((f: any) => (
-                <Card key={f.id} className={cn("rounded-2xl border-border/50 premium-shadow backdrop-blur-sm transition-all", f.completed ? "bg-muted/10 opacity-60" : "bg-card/40 hover:bg-card hover:scale-[1.01]")}>
-                  <CardContent className="p-4 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center border shadow-inner transition-colors", f.completed ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-amber-500/10 text-amber-500 border-amber-500/20")}>
-                        {f.completed ? <Check className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
-                      </div>
-                      <div>
-                        <div className="font-black text-base text-foreground tracking-tight">{f.type === "daily" ? "متابعة يومية" : "متابعة دورية"}</div>
-                        <div className="text-xs text-muted-foreground font-black opacity-70 mt-0.5">{safeDate(f.scheduledAt)}</div>
-                        {f.notes && <p className="text-xs font-bold text-muted-foreground mt-2 line-clamp-1">{f.notes}</p>}
-                      </div>
-                    </div>
-                    {!f.completed && (
-                      <Button variant="outline" size="sm" className="h-9 px-4 rounded-lg text-[10px] font-black uppercase tracking-widest border-amber-500/20 text-amber-500 hover:bg-amber-500 hover:text-white transition-all" onClick={() => updateFuMutation.mutate({ id: f.id })} disabled={updateFuMutation.isPending}>تحديد كمنجز</Button>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-
           <Card className="premium-shadow rounded-[2rem] border-border bg-card/40 backdrop-blur-md p-6">
             <div className="flex items-center gap-3 mb-5">
               <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">

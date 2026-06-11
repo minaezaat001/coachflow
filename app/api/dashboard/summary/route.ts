@@ -20,11 +20,11 @@ export async function GET() {
     today.setHours(0, 0, 0, 0);
     const todayStr = today.toISOString().split("T")[0];
 
-    const pendingFollowups = await prisma.followup.count({
+    const pendingFollowups = await prisma.client.count({
       where: {
-        completed: false,
-        scheduledAt: { lte: todayStr },
-        client: { coachId: user.id },
+        coachId: user.id,
+        subscriptionStatus: "active",
+        nextCheckInDate: { lte: todayStr },
       },
     });
 

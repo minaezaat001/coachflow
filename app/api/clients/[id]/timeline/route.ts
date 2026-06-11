@@ -12,25 +12,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       return NextResponse.json({ error: "العميل غير موجود" }, { status: 404 });
     }
 
-    const [followups, payments, subscriptions, progress] = await Promise.all([
-      prisma.followup.findMany({ where: { clientId } }),
+    const [payments, subscriptions, progress] = await Promise.all([
       prisma.payment.findMany({ where: { clientId } }),
       prisma.subscription.findMany({ where: { clientId } }),
       prisma.progress.findMany({ where: { clientId } }),
     ]);
 
     const timeline: any[] = [];
-
-    followups.forEach((f) => {
-      timeline.push({
-        id: `followup-${f.id}`,
-        type: "followup",
-        title: f.type === "phone" ? "متابعة هاتفية" : f.type === "visit" ? "زيارة" : "متابعة يومية",
-        description: f.notes || "",
-        date: f.scheduledAt,
-        completed: f.completed,
-      });
-    });
 
     payments.forEach((p) => {
       timeline.push({

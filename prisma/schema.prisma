@@ -11,62 +11,61 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  name         String?
-  passwordHash String
-  role         String   @default("coach")
-  suspended    Boolean  @default(false)
-  whatsapp         String?
-  notifySubExpiry  Boolean  @default(true)
-  notifyPayment    Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String   @id @default(cuid())
+  email           String   @unique
+  name            String?
+  passwordHash    String
+  role            String   @default("coach")
+  suspended       Boolean  @default(false)
+  whatsapp        String?
+  notifySubExpiry Boolean  @default(true)
+  notifyPayment   Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  clients      Client[]
-  todos        Todo[]
+  clients       Client[]
+  todos         Todo[]
   notifications Notification[]
-  packages     Package[]
-  leads        Lead[]
+  packages      Package[]
+  leads         Lead[]
 }
 
 model Client {
-  id                   Int       @id @default(autoincrement())
-  coachId              String
-  name                 String
-  phone                String
-  goal                 String
-  weight               Float?
-  height               Float?
-  tags                 String    @default("[]")
-  notes                String?
-  dietPlanUrl          String?
-  workoutPlanUrl       String?
-  subscriptionType     String?
-  subscriptionStartDate String?
-  subscriptionEndDate  String?
-  subscriptionStatus   String    @default("pending")
-  paymentStatus        String    @default("unpaid")
-  commitmentScore      Int?
-  uniqueToken          String?   @unique
-  onboarded            Boolean   @default(false)
-  packageId            Int?
-  defaultCheckInFrequency Int?  @default(7)
-  nextCheckInDate      String?
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  id                      Int      @id @default(autoincrement())
+  coachId                 String
+  name                    String
+  phone                   String
+  goal                    String
+  weight                  Float?
+  height                  Float?
+  tags                    String   @default("[]")
+  notes                   String?
+  dietPlanUrl             String?
+  workoutPlanUrl          String?
+  subscriptionType        String?
+  subscriptionStartDate   String?
+  subscriptionEndDate     String?
+  subscriptionStatus      String   @default("pending")
+  paymentStatus           String   @default("unpaid")
+  commitmentScore         Int?
+  uniqueToken             String?  @unique
+  onboarded               Boolean  @default(false)
+  packageId               Int?
+  defaultCheckInFrequency Int?     @default(7)
+  nextCheckInDate         String?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 
-  coach          User           @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  subscriptions  Subscription[]
-  payments       Payment[]
-  followups      Followup[]
-  exercises      Exercise[]
-  todos          Todo[]
-  progress       Progress[]
-  workoutLogs    WorkoutLog[]
-  onboarding     Onboarding[]
-  notifications  Notification[]
-  package        Package?       @relation(fields: [packageId], references: [id])
+  coach               User                 @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  subscriptions       Subscription[]
+  payments            Payment[]
+  exercises           Exercise[]
+  todos               Todo[]
+  progress            Progress[]
+  workoutLogs         WorkoutLog[]
+  onboarding          Onboarding[]
+  notifications       Notification[]
+  package             Package?             @relation(fields: [packageId], references: [id])
   clientNotifications ClientNotification[]
   clientFiles         ClientFile[]
 
@@ -101,22 +100,7 @@ model Payment {
   createdAt       DateTime @default(now())
 
   client       Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  subscription  Subscription? @relation(fields: [subscriptionId], references: [id])
-}
-
-model Followup {
-  id          Int      @id @default(autoincrement())
-  clientId    Int
-  title       String   @default("متابعة")
-  type        String   @default("daily")
-  priority    String   @default("medium")
-  notes       String?
-  completed   Boolean  @default(false)
-  scheduledAt String
-  completedAt String?
-  createdAt   DateTime @default(now())
-
-  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
 }
 
 model Notification {
@@ -162,17 +146,17 @@ model ClientNotification {
 }
 
 model Package {
-  id                       Int      @id @default(autoincrement())
-  coachId                  String
-  name                     String
-  price                    Float
-  durationMonths           Int
-  defaultCheckInFrequency  Int      @default(7)
-  packageType              String   @default("both")
-  isActive                 Boolean  @default(true)
-  maxClients               Int?
-  description              String?
-  createdAt                DateTime @default(now())
+  id                      Int      @id @default(autoincrement())
+  coachId                 String
+  name                    String
+  price                   Float
+  durationMonths          Int
+  defaultCheckInFrequency Int      @default(7)
+  packageType             String   @default("both")
+  isActive                Boolean  @default(true)
+  maxClients              Int?
+  description             String?
+  createdAt               DateTime @default(now())
 
   coach   User     @relation(fields: [coachId], references: [id], onDelete: Cascade)
   clients Client[]
@@ -194,28 +178,28 @@ model Exercise {
 }
 
 model Progress {
-  id         Int      @id @default(autoincrement())
-  clientId   Int
-  weight     Float?
-  bodyFat    Float?
-  waist      Float?
-  chest      Float?
-  neck       Float?
-  leg        Float?
-  arm        Float?
-  glutes     Float?
-  adherence  Int?
-  notes      String?
-  planFeedback   String?
+  id               Int      @id @default(autoincrement())
+  clientId         Int
+  weight           Float?
+  bodyFat          Float?
+  waist            Float?
+  chest            Float?
+  neck             Float?
+  leg              Float?
+  arm              Float?
+  glutes           Float?
+  adherence        Int?
+  notes            String?
+  planFeedback     String?
   improvementsView String?
-  planAction     String?
-  coachComment   String?
-  frontPhoto String?
-  sidePhoto  String?
-  backPhoto  String?
-  inbodyPhoto String?
-  recordedAt String
-  createdAt  DateTime @default(now())
+  planAction       String?
+  coachComment     String?
+  frontPhoto       String?
+  sidePhoto        String?
+  backPhoto        String?
+  inbodyPhoto      String?
+  recordedAt       String
+  createdAt        DateTime @default(now())
 
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
@@ -235,18 +219,18 @@ model WorkoutLog {
 }
 
 model Lead {
-  id               Int      @id @default(autoincrement())
-  coachId          String
-  name             String
-  phone            String
-  age              Int?
-  weight           Float?
-  height           Float?
-  target           String?
+  id                Int      @id @default(autoincrement())
+  coachId           String
+  name              String
+  phone             String
+  age               Int?
+  weight            Float?
+  height            Float?
+  target            String?
   selectedPackageId Int?
-  data             String   @default("{}")
-  status           String   @default("pending") // "pending" | "converted"
-  createdAt        DateTime @default(now())
+  data              String   @default("{}")
+  status            String   @default("pending") // "pending" | "converted"
+  createdAt         DateTime @default(now())
 
   coach   User     @relation(fields: [coachId], references: [id], onDelete: Cascade)
   package Package? @relation(fields: [selectedPackageId], references: [id])

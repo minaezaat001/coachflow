@@ -194,17 +194,7 @@ export default function CheckInsDashboard() {
                       <p className="text-xs text-muted-foreground/70 font-medium">{p.notes}</p>
                     </div>
                   )}
-                  {p.planAction && (
-                    <div className={`mt-2 p-2 rounded-lg border ${p.planAction === "keep" ? "bg-emerald-500/5 border-emerald-500/20" : "bg-blue-500/5 border-blue-500/20"}`}>
-                      <p className="text-xs font-semibold mb-0.5">{p.planAction === "keep" ? "✅ تم تثبيت الخطة" : "🔄 تم تعديل الخطة"}</p>
-                    </div>
-                  )}
-                  {p.coachComment && (
-                    <div className="mt-2 p-2 rounded-lg bg-primary/5 border border-primary/10">
-                      <p className="text-xs font-semibold text-primary mb-0.5">تعليق المدرب</p>
-                      <p className="text-xs font-medium">{p.coachComment}</p>
-                    </div>
-                  )}
+
                 </div>
               ))
             )}

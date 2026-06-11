@@ -96,16 +96,31 @@ export async function POST() {
         }
       }
 
-      // 4. Delayed check-in — strict nextCheckInDate logic
-      // Only notify if: Current Date > nextCheckInDate + 1 Day
-      // i.e., the scheduled check-in date has passed AND a full extra day has elapsed
+      // 4. Check-in due today — immediate notification
+      if (client.nextCheckInDate === todayISO) {
+        const title = `لديك ميعاد متابعة دورية اليوم مع العميل ${client.name}`;
+        const key = `${client.id}:${title}`;
+        if (!existingKeys.has(key)) {
+          await createNotification({
+            coachId: user.id,
+            clientId: client.id,
+            clientName: client.name,
+            type: "checkin",
+            title,
+            message: `موعد متابعة ${client.name} اليوم — ينتظر منك متابعة نتائجه`,
+            targetUrl: `/clients/${client.id}`,
+          });
+          created++;
+        }
+      }
+
+      // 5. Delayed check-in — nextCheckInDate has passed
       if (client.nextCheckInDate) {
         const checkInDate = new Date(client.nextCheckInDate + "T00:00:00");
         const dayAfterCheckIn = new Date(checkInDate.getTime() + 24 * 60 * 60 * 1000);
         const dayAfterCheckInStr = dayAfterCheckIn.toISOString().split("T")[0];
 
         if (todayISO > dayAfterCheckInStr) {
-          // Overdue — create notification if not already exists
           const title = `تأخر ${client.name} عن موعد متابعته المجدولة`;
           const key = `${client.id}:${title}`;
           if (!existingKeys.has(key)) {
@@ -120,25 +135,7 @@ export async function POST() {
             });
             created++;
           }
-        } else {
-          // Not overdue — delete any stale check-in notification for this client
-          await prisma.notification.deleteMany({
-            where: {
-              coachId: user.id,
-              clientId: client.id,
-              type: "checkin",
-            },
-          });
         }
-      } else {
-        // No nextCheckInDate set — delete any stale check-in notification
-        await prisma.notification.deleteMany({
-          where: {
-            coachId: user.id,
-            clientId: client.id,
-            type: "checkin",
-          },
-        });
       }
     }
 

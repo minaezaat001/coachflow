@@ -257,7 +257,7 @@ export default function Dashboard() {
                 )}
               </div>
             </div>
-            <Link href="/followups">
+            <Link href="/check-ins">
               <Button variant="ghost" size="sm">عرض الكل</Button>
             </Link>
           </div>
@@ -276,39 +276,32 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="divide-y divide-border/50">
-                {followups.map((f: any) => {
-                  const isOverdue = f.scheduledAt < new Date().toISOString().split("T")[0];
+                {followups.map((c: any) => {
+                  const isOverdue = c.nextCheckInDate < new Date().toISOString().split("T")[0];
                   return (
-                    <div key={f.id} className={cn(
+                    <div key={c.id} className={cn(
                       "flex items-center gap-3 px-5 py-3.5 transition-colors",
                       isOverdue ? "bg-destructive/[0.03] hover:bg-destructive/[0.06]" : "hover:bg-muted/30"
                     )}>
                       <div className={cn(
                         "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
-                        isOverdue ? "bg-destructive/10" : followups.length > 2 ? "bg-warning/10" : "bg-energy/10"
+                        isOverdue ? "bg-destructive/10" : "bg-warning/10"
                       )}>
                         <Clock className={cn("w-4 h-4", isOverdue ? "text-destructive" : "text-warning")} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className={cn("text-sm truncate", isOverdue ? "font-semibold text-destructive" : "font-medium text-foreground")}>
-                            {f.client?.name || "عميل"}
-                          </p>
-                          <Badge variant={f.priority === "high" ? "destructive" : f.priority === "low" ? "secondary" : "warning"} className="text-[10px] px-1.5 py-0">
-                            {f.priority === "high" ? "عاجل" : f.priority === "low" ? "عادي" : "متوسط"}
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground truncate mt-0.5">{f.title}</p>
-                        {isOverdue && (
-                          <p className="text-xs text-destructive font-medium mt-0.5">متأخرة — {f.scheduledAt}</p>
-                        )}
+                        <p className={cn("text-sm truncate", isOverdue ? "font-semibold text-destructive" : "font-medium text-foreground")}>
+                          {c.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate mt-0.5">
+                          المتابعة: {c.nextCheckInDate}
+                          {isOverdue && " (متأخرة)"}
+                        </p>
                       </div>
-                      <Link href={`/clients/${f.client?.id}`}>
+                      <Link href={`/clients/${c.id}?tab=progress`}>
                         <Button variant="ghost" size="sm">فتح</Button>
                       </Link>
-                    </div>
-                  );
-                })}
+                    </div>);})}
               </div>
             )}
           </div>

@@ -7,19 +7,23 @@ export async function GET() {
     const user = await requireAuth();
 
     const today = new Date();
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const todayStr = today.toISOString().split("T")[0];
 
-    const followups = await prisma.followup.findMany({
+    const clients = await prisma.client.findMany({
       where: {
-        client: { coachId: user.id },
-        completed: false,
-        scheduledAt: { lte: todayStr },
+        coachId: user.id,
+        subscriptionStatus: "active",
+        nextCheckInDate: { lte: todayStr },
       },
-      include: { client: { select: { id: true, name: true, phone: true, goal: true } } },
-      orderBy: [{ scheduledAt: "asc" }, { priority: "desc" }],
+      select: {
+        id: true, name: true, phone: true, goal: true,
+        nextCheckInDate: true, defaultCheckInFrequency: true,
+        subscriptionStatus: true,
+      },
+      orderBy: { nextCheckInDate: "asc" },
     });
 
-    return NextResponse.json({ followups });
+    return NextResponse.json({ followups: clients });
   } catch (error) {
     return NextResponse.json({ error: "حدث خطأ أثناء جلب متابعات اليوم" }, { status: 500 });
   }
