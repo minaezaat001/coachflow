@@ -36,9 +36,9 @@ export function calculateClientFinance(payments: PaymentRecord[], subscriptions:
     .filter((p) => p.status !== "unpaid")
     .reduce((sum, p) => sum + (p.amount || 0), 0);
 
-  const activeSubValue = subscriptions
-    .filter((s) => s.status === "active")
-    .reduce((sum, s) => sum + (s.price || 0), 0);
+  const now = new Date().toISOString().split("T")[0];
+  const activeSub = subscriptions.find((s) => s.status === "active" && s.endDate && s.endDate >= now);
+  const activeSubValue = activeSub?.price ?? 0;
 
   const remainingBalance = Math.max(0, activeSubValue - totalPaid);
 

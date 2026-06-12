@@ -86,43 +86,11 @@ const fetchAllPayments = async () => {
   const res = await fetch("/api/payments");
   if (!res.ok) throw new Error("فشل جلب المدفوعات");
   const data = await res.json();
-  const payments = (data.payments || []).map((p: any) => ({
+  return (data.payments || []).map((p: any) => ({
     ...p,
     clientName: p.client?.name,
     clientPhone: p.client?.phone,
   }));
-
-  // Aggregate by clientId
-  const grouped = new Map<number, any>();
-  for (const p of payments) {
-    if (!grouped.has(p.clientId)) {
-      grouped.set(p.clientId, {
-        clientId: p.clientId,
-        clientName: p.clientName,
-        clientPhone: p.clientPhone,
-        totalPaid: 0,
-        lastPaymentDate: null as string | null,
-        paymentCount: 0,
-        remainingBalance: 0,
-        methods: new Set<string>(),
-      });
-    }
-    const g = grouped.get(p.clientId)!;
-    if (p.status !== "unpaid") {
-      g.totalPaid += p.amount || 0;
-    }
-    g.paymentCount++;
-    if (p.method) g.methods.add(p.method);
-    if (p.paidAt && (!g.lastPaymentDate || p.paidAt > g.lastPaymentDate)) {
-      g.lastPaymentDate = p.paidAt;
-    }
-    // Latest remaining balance
-    if (p.amountRemaining != null) {
-      g.remainingBalance = p.amountRemaining;
-    }
-  }
-
-  return Array.from(grouped.values()).sort((a, b) => (b.lastPaymentDate || "").localeCompare(a.lastPaymentDate || ""));
 };
 
 const fetchFinancialSummary = async (): Promise<any> => {
@@ -207,9 +175,9 @@ export default function Payments() {
     }
   });
 
-  const filtered = statusFilter === "all" ? payments : payments?.filter((g: any) => {
-    const derivedStatus = g.remainingBalance > 0 ? (g.totalPaid > 0 ? "partial" : "unpaid") : "paid";
-    return derivedStatus === statusFilter;
+  const filtered = statusFilter === "all" ? payments : payments?.filter((p: any) => {
+    const actualStatus = (p.amountRemaining && p.amountRemaining > 0 && p.status === "paid") ? "partial" : p.status;
+    return actualStatus === statusFilter;
   });
 
   const stats = [
@@ -439,55 +407,53 @@ export default function Payments() {
           </div>
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-            {filtered?.map((g: any, i: number) => {
-              const derivedStatus = g.remainingBalance > 0 ? (g.totalPaid > 0 ? "partial" : "unpaid") : "paid";
+            {filtered?.map((p: any, i: number) => {
+              const actualStatus = (p.amountRemaining && p.amountRemaining > 0 && p.status === "paid") ? "partial" : p.status;
               return (
                 <div
-                  key={g.clientId}
+                  key={p.id}
                   className="rounded-xl bg-card p-5 shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_0_rgba(0,0,0,0.06)] transition-all animate-fade-up"
                   style={{ animationDelay: `${i * 0.03}s` }}
                 >
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center font-medium text-primary shrink-0">
-                      {g.clientName?.charAt(0)}
+                      {p.clientName?.charAt(0)}
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-sm font-medium text-foreground truncate">{g.clientName}</span>
-                        <Badge variant={paymentStatusConfig[derivedStatus]?.variant || "secondary"}>
-                          {paymentStatusConfig[derivedStatus]?.label || derivedStatus}
+                        <span className="text-sm font-medium text-foreground truncate">{p.clientName}</span>
+                        <Badge variant={paymentStatusConfig[actualStatus]?.variant || "secondary"}>
+                          {paymentStatusConfig[actualStatus]?.label || actualStatus}
                         </Badge>
                       </div>
 
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
-                        <span className="font-medium text-emerald-500">{g.totalPaid?.toLocaleString()} ج.م مدفوع</span>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground">{p.amount?.toLocaleString()} ج.م</span>
                         <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
-                        <span className="text-destructive">متبقي {g.remainingBalance?.toLocaleString()} ج.م</span>
-                        <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
-                        <span>{g.paymentCount} دفعة{g.paymentCount !== 1 ? "ات" : "ة"}</span>
+                        <span>{PAYMENT_METHODS[p.method] ?? p.method}</span>
+                        {p.amountRemaining && p.amountRemaining > 0 && (
+                          <>
+                            <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
+                            <span className="text-destructive">متبقي {p.amountRemaining?.toLocaleString()} ج.م</span>
+                          </>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-3 mt-3 text-[10px] text-muted-foreground">
-                        {g.lastPaymentDate && (
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            آخر دفعة: {safeDate(g.lastPaymentDate)}
-                          </span>
-                        )}
                         <span className="flex items-center gap-1">
-                          <Wallet className="w-3 h-3" />
-                          {Array.from(g.methods).map((m: any) => PAYMENT_METHODS[m] ?? m).join("، ")}
+                          <Calendar className="w-3 h-3" />
+                          {safeDate(p.paidAt)}
                         </span>
                       </div>
                     </div>
 
                     <div className="flex flex-col gap-1">
-                      {(derivedStatus === "partial" || derivedStatus === "unpaid") && (
+                      {(actualStatus === "partial" || actualStatus === "unpaid") && (
                         <Button
                           size="sm"
                           className="h-8 text-xs"
-                          onClick={() => setSettleInfo(g)}
+                          onClick={() => setSettleInfo(p)}
                         >
                           <Wallet className="w-3.5 h-3.5" />
                           تسديد
@@ -496,7 +462,7 @@ export default function Payments() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => setDeleteInfo({ id: `${g.clientId}`, clientId: g.clientId })}
+                        onClick={() => setDeleteInfo({ id: p.id, clientId: p.clientId })}
                         className="w-8 h-8 text-destructive/60 hover:text-destructive hover:bg-destructive/10"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -516,6 +482,9 @@ export default function Payments() {
           onOpenChange={(o) => { if (!o) setSettleInfo(null); }}
           clientId={settleInfo.clientId}
           clientName={settleInfo.clientName}
+          existingPaymentId={settleInfo.id}
+          existingAmount={settleInfo.amount}
+          existingRemaining={settleInfo.amountRemaining}
           onSuccess={() => { qc.invalidateQueries({ queryKey: ["allPayments"] }); qc.invalidateQueries({ queryKey: ["financialSummary"] }); }}
         />
       )}
