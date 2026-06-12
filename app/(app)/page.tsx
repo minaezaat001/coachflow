@@ -190,7 +190,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard title="إجمالي العملاء" value={summary?.totalClients} icon={Users} loading={loadingSummary} accent="primary" href="/clients" />
         <StatCard title="عملاء نشطين" value={summary?.activeClients} icon={Activity} loading={loadingSummary} accent="energy" href="/clients?filter=active" trend="نشط" />
-        <StatCard title="متابعات اليوم" value={summary?.pendingFollowups} icon={CalendarCheck} loading={loadingSummary} accent={summary?.pendingFollowups ? "warning" : "energy"} href="/followups" />
+        <StatCard title="متابعات اليوم" value={summary?.pendingFollowups} icon={CalendarCheck} loading={loadingSummary} accent={summary?.pendingFollowups ? "warning" : "energy"} />
         <StatCard title="الإيرادات" value={summary?.totalRevenue ? `${summary.totalRevenue.toLocaleString()} ج.م` : "0"} icon={DollarSign} loading={loadingSummary} accent="primary" href="/payments" />
         <StatCard title="مبالغ متأخرة" value={summary?.unpaidAmount ? `${summary.unpaidAmount.toLocaleString()} ج.م` : "0"} icon={Target} loading={loadingSummary} accent={summary?.unpaidAmount ? "destructive" : "energy"} href="/payments" />
       </div>
