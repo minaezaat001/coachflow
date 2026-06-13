@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 import { deriveClientPaymentStatus } from "@/lib/finance";
+import { revalidatePath } from "next/cache";
 
 export async function GET(req: Request) {
   try {
@@ -41,18 +42,51 @@ export async function POST(req: Request) {
     }
 
     const payment = await prisma.$transaction(async (tx) => {
-      const pay = await tx.payment.create({
-        data: {
+      // Look for an existing open payment for this client (partial or unpaid)
+      const existingOpen = await tx.payment.findFirst({
+        where: {
           clientId: data.clientId,
-          subscriptionId: data.subscriptionId ? parseInt(data.subscriptionId) : null,
-          amount: parseFloat(data.amount),
-          amountRemaining: data.amountRemaining !== undefined && data.amountRemaining !== null ? parseFloat(data.amountRemaining) : null,
-          status: data.status || "unpaid",
-          method: data.method || "cash",
-          paidAt: data.paidAt || null,
-          notes: data.notes || null,
+          OR: [
+            { amountRemaining: { gt: 0 } },
+            { status: "partial" },
+          ],
         },
+        orderBy: { createdAt: "desc" },
       });
+
+      let pay;
+      if (existingOpen) {
+        const newAmount = existingOpen.amount + parseFloat(data.amount);
+        const newRemaining = data.amountRemaining !== undefined && data.amountRemaining !== null
+          ? parseFloat(data.amountRemaining)
+          : Math.max(0, (existingOpen.amountRemaining ?? 0) - parseFloat(data.amount));
+        const newStatus = data.status || (newRemaining <= 0 ? "paid" : "partial");
+
+        pay = await tx.payment.update({
+          where: { id: existingOpen.id },
+          data: {
+            amount: newAmount,
+            amountRemaining: newRemaining,
+            status: newStatus,
+            method: data.method || existingOpen.method,
+            paidAt: data.paidAt || new Date().toISOString().split("T")[0],
+            notes: data.notes || existingOpen.notes,
+          },
+        });
+      } else {
+        pay = await tx.payment.create({
+          data: {
+            clientId: data.clientId,
+            subscriptionId: data.subscriptionId ? parseInt(data.subscriptionId) : null,
+            amount: parseFloat(data.amount),
+            amountRemaining: data.amountRemaining !== undefined && data.amountRemaining !== null ? parseFloat(data.amountRemaining) : null,
+            status: data.status || "unpaid",
+            method: data.method || "cash",
+            paidAt: data.paidAt || null,
+            notes: data.notes || null,
+          },
+        });
+      }
 
       const allPayments = await tx.payment.findMany({
         where: { clientId: data.clientId },
@@ -81,6 +115,9 @@ export async function POST(req: Request) {
 
       return pay;
     });
+
+    revalidatePath("/payments");
+    revalidatePath(`/clients/${data.clientId}`);
 
     return NextResponse.json({ payment }, { status: 201 });
   } catch (error) {

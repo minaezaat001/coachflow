@@ -141,10 +141,15 @@ export async function POST(req: Request) {
 
     if (data.paymentAmount) {
       const paymentStatus = data.paymentStatus || "unpaid";
+      const paidAmount = parseFloat(data.paymentAmount);
+      const subPrice = data.subscriptionPrice ? parseFloat(data.subscriptionPrice) : 0;
+      const amountRemaining = Math.max(0, subPrice - paidAmount);
+
       await prisma.payment.create({
         data: {
           clientId: client.id,
-          amount: parseFloat(data.paymentAmount),
+          amount: paidAmount,
+          amountRemaining: amountRemaining,
           status: paymentStatus,
           method: data.paymentMethod || "cash",
           paidAt: data.paidAt || null,
