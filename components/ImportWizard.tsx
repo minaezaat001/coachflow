@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const SYSTEM_FIELDS = [
-  { key: "", label: "-- لا تقم بالاستيراد --" },
+  { key: "__skip__", label: "-- لا تقم بالاستيراد --" },
   { key: "name", label: "الاسم", required: true },
   { key: "phone", label: "رقم الهاتف", required: true },
   { key: "goal", label: "الهدف", required: true },
