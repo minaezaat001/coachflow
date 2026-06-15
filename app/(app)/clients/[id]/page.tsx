@@ -10,7 +10,7 @@ import { PlanFileManager } from "@/components/PlanFileManager";
 import { RenewalDialog } from "@/components/RenewalDialog";
 import { OnboardingDisplay } from "@/components/OnboardingDisplay";
 import { PaymentModal } from "@/components/PaymentModal";
-import { cn } from "@/lib/utils";
+import { cn, calculateClientStatus } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useNotifications } from "@/components/NotificationProvider";
 import { Button } from "@/components/ui/button";
@@ -79,7 +79,7 @@ const fetchClient = async (id: string) => {
   const res = await fetch(`/api/clients/${id}`);
   if (!res.ok) throw new Error("فشل جلب العميل");
   const data = await res.json();
-  return { ...data.client, _finance: data.finance };
+  return { ...data.client, subscriptionStatus: calculateClientStatus(data.client), _finance: data.finance };
 };
 
 const fetchSubscriptions = async (clientId: string) => {
