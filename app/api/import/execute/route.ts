@@ -79,6 +79,12 @@ export async function POST(req: Request) {
 
       try {
         const uniqueToken = crypto.randomBytes(16).toString("hex");
+
+        // Determine subscription status based on endDate
+        const subEndDate = mapped.subscriptionEndDate || null;
+        const now = new Date().toISOString().split("T")[0];
+        const subStatus = subEndDate && subEndDate < now ? "expired" : mapped.subscriptionType ? "active" : "pending";
+
         const client = await prisma.client.create({
           data: {
             coachId: user.id,
@@ -90,8 +96,8 @@ export async function POST(req: Request) {
             notes: mapped.notes || null,
             subscriptionType: mapped.subscriptionType || null,
             subscriptionStartDate: mapped.subscriptionStartDate || null,
-            subscriptionEndDate: mapped.subscriptionEndDate || null,
-            subscriptionStatus: mapped.subscriptionType ? "active" : "pending",
+            subscriptionEndDate: subEndDate,
+            subscriptionStatus: subStatus,
             paymentStatus: "unpaid",
             uniqueToken,
           },
@@ -106,7 +112,7 @@ export async function POST(req: Request) {
               startDate: mapped.subscriptionStartDate,
               endDate: mapped.subscriptionEndDate,
               price: Math.round(parseFloat(mapped.subscriptionPrice)),
-              status: "active",
+              status: subEndDate && subEndDate < now ? "expired" : "active",
             },
           });
         }

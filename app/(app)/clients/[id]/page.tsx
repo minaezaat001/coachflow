@@ -801,7 +801,7 @@ export default function ClientDetail() {
                         {s.price && <div className="text-sm font-black text-primary mt-1.5">{s.price} ج.م</div>}
                       </div>
                     </div>
-                    {statusBadge(s.status)}
+                    {statusBadge(s.endDate && new Date(s.endDate) < new Date() ? "expired" : s.status)}
                   </CardContent>
                 </Card>
               ))}
@@ -1321,6 +1321,7 @@ export default function ClientDetail() {
         open={renewOpen} 
         onOpenChange={setRenewOpen} 
         client={{ id: clientId, name: client.name, subscriptionEndDate: client.subscriptionEndDate }} 
+        lastSubscription={(subscriptions as any[])?.[0]}
       />
     </div>
   );

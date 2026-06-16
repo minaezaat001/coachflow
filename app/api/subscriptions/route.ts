@@ -57,7 +57,12 @@ export async function POST(req: Request) {
       const hasActive = allSubs.some((s) => s.status === "active") || (data.status === "active");
       await tx.client.update({
         where: { id: data.clientId },
-        data: { subscriptionStatus: hasActive ? "active" : "expired" },
+        data: {
+          subscriptionStatus: hasActive ? "active" : "expired",
+          subscriptionType: data.type,
+          subscriptionStartDate: data.startDate,
+          subscriptionEndDate: data.endDate,
+        },
       });
 
       return sub;
