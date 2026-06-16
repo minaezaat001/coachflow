@@ -250,7 +250,21 @@ export default function ClientDetail() {
   const [renewOpen, setRenewOpen] = useState(false);
   const [renewAmountPaid, setRenewAmountPaid] = useState("");
   const [renewSubmitting, setRenewSubmitting] = useState(false);
-  useEffect(() => { if (renewOpen) { setRenewAmountPaid(""); setSubStart(new Date().toISOString().split("T")[0]); setSubType("monthly"); const d = new Date(); d.setMonth(d.getMonth() + 1); setSubEnd(d.toISOString().split("T")[0]); setSubPrice(""); } }, [renewOpen]);
+  const [selectedRenewPkgId, setSelectedRenewPkgId] = useState("");
+  useEffect(() => { if (renewOpen) { setRenewAmountPaid(""); setSelectedRenewPkgId(""); setSubStart(new Date().toISOString().split("T")[0]); setSubType("monthly"); const d = new Date(); d.setMonth(d.getMonth() + 1); setSubEnd(d.toISOString().split("T")[0]); setSubPrice(""); } }, [renewOpen]);
+
+  const handlePkgSelect = (pkgId: string) => {
+    setSelectedRenewPkgId(pkgId);
+    if (!pkgId) return;
+    const pkg = (allPackages as any[])?.find((p: any) => String(p.id) === String(pkgId));
+    if (!pkg) return;
+    setSubType(pkg.packageType || "monthly");
+    setSubPrice(String(pkg.price || ""));
+    const start = new Date(subStart);
+    const end = new Date(start);
+    end.setMonth(end.getMonth() + (pkg.durationMonths || 1));
+    setSubEnd(end.toISOString().split("T")[0]);
+  };
   const [subType, setSubType] = useState("monthly");
   const [subStart, setSubStart] = useState(new Date().toISOString().split("T")[0]);
   const [subEnd, setSubEnd] = useState("");
@@ -1363,14 +1377,19 @@ export default function ClientDetail() {
           </DialogHeader>
           <div className="space-y-5 py-2">
             <div className="space-y-2">
-              <Label className="font-black text-[10px] uppercase tracking-widest opacity-70">نوع الباقة</Label>
-              <Select value={subType} onValueChange={(v) => { setSubType(v); const d = new Date(subStart); let end = new Date(d); if (v === "monthly") end.setMonth(d.getMonth() + 1); else if (v === "quarterly") end.setMonth(d.getMonth() + 3); else if (v === "semi-annual") end.setMonth(d.getMonth() + 6); else if (v === "annual") end.setFullYear(d.getFullYear() + 1); setSubEnd(end.toISOString().split("T")[0]); }}>
-                <SelectTrigger className="h-11 rounded-lg bg-muted/20 border-border/40 font-bold"><SelectValue /></SelectTrigger>
-                <SelectContent className="rounded-xl border-border/40 font-bold">
-                  <SelectItem value="monthly">باقة شهرية</SelectItem>
-                  <SelectItem value="quarterly">باقة 3 شهور</SelectItem>
-                  <SelectItem value="semi-annual">باقة 6 شهور</SelectItem>
-                  <SelectItem value="annual">باقة سنوية</SelectItem>
+              <Label className="font-black text-[10px] uppercase tracking-widest opacity-70">اختر باقة</Label>
+              <Select value={selectedRenewPkgId} onValueChange={handlePkgSelect}>
+                <SelectTrigger className="h-11 rounded-lg bg-muted/20 border-border/40 font-bold"><SelectValue placeholder="اختر باقة..." /></SelectTrigger>
+                <SelectContent className="rounded-xl border-border/40 font-bold max-h-60">
+                  {(allPackages as any[])?.length > 0 ? (allPackages as any[])?.map((pkg: any) => (
+                    <SelectItem key={pkg.id} value={String(pkg.id)} className="font-bold py-2 text-sm">
+                      {pkg.name} — {pkg.durationMonths} شهور / {pkg.price} ج.م
+                    </SelectItem>
+                  )) : (
+                    <div className="px-3 py-4 text-center text-xs font-medium text-muted-foreground">
+                      لم تقم بإنشاء باقات بعد، يرجى إضافتها من إعدادات الباقات
+                    </div>
+                  )}
                 </SelectContent>
               </Select>
             </div>
