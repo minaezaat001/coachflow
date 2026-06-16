@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { RefreshCcw, Plus, Calendar, CreditCard, MessageSquare, FileText, Share2, Target, Scale, Ruler, History, Activity, User, Dumbbell, ClipboardList, Package, ExternalLink, ArrowRight, MessageCircle, Check, Clock, LayoutDashboard, DollarSign, CalendarCheck, Edit3, Upload, Loader2 } from "lucide-react";
 import { PlanFileManager } from "@/components/PlanFileManager";
-import { RenewalDialog } from "@/components/RenewalDialog";
+
 import { OnboardingDisplay } from "@/components/OnboardingDisplay";
 import { PaymentModal } from "@/components/PaymentModal";
 import { cn, calculateClientStatus } from "@/lib/utils";
@@ -248,6 +248,9 @@ export default function ClientDetail() {
   const [subOpen, setSubOpen] = useState(false);
   const [editingSub, setEditingSub] = useState<any>(null);
   const [renewOpen, setRenewOpen] = useState(false);
+  const [renewAmountPaid, setRenewAmountPaid] = useState("");
+  const [renewSubmitting, setRenewSubmitting] = useState(false);
+  useEffect(() => { if (renewOpen) { setRenewAmountPaid(""); setSubStart(new Date().toISOString().split("T")[0]); setSubType("monthly"); const d = new Date(); d.setMonth(d.getMonth() + 1); setSubEnd(d.toISOString().split("T")[0]); setSubPrice(""); } }, [renewOpen]);
   const [subType, setSubType] = useState("monthly");
   const [subStart, setSubStart] = useState(new Date().toISOString().split("T")[0]);
   const [subEnd, setSubEnd] = useState("");
@@ -289,6 +292,39 @@ export default function ClientDetail() {
       setSubOpen(false);
     }
   });
+
+  const handleRenew = async () => {
+    if (!subEnd) { toast({ title: "حدد تاريخ النهاية", variant: "destructive" }); return; }
+    setRenewSubmitting(true);
+    try {
+      const subRes = await fetch("/api/subscriptions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId: parseInt(clientId), type: subType, startDate: subStart, endDate: subEnd, price: subPrice ? Math.round(parseFloat(subPrice)) : undefined, status: "active" }),
+      });
+      if (!subRes.ok) { const e = await subRes.json(); throw new Error(e.error || "فشل إنشاء الاشتراك"); }
+      const subData = await subRes.json();
+
+      if (renewAmountPaid && parseFloat(renewAmountPaid) > 0) {
+        const payRes = await fetch("/api/payments", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ clientId: parseInt(clientId), amount: Math.round(parseFloat(renewAmountPaid)), status: "paid", method: "cash", paidAt: new Date().toISOString() }),
+        });
+        if (!payRes.ok) { const e = await payRes.json(); throw new Error(e.error || "فشل تسجيل الدفعة"); }
+      }
+
+      qc.invalidateQueries({ queryKey: ["subscriptions", clientId] });
+      qc.invalidateQueries({ queryKey: ["client", clientId] });
+      qc.invalidateQueries({ queryKey: ["payments", clientId] });
+      toast({ title: "✅ تم تجديد الاشتراك بنجاح" });
+      setRenewOpen(false);
+      setRenewAmountPaid("");
+    } catch (err: any) {
+      toast({ title: err.message || "حدث خطأ أثناء التجديد", variant: "destructive" });
+    }
+    setRenewSubmitting(false);
+  };
 
   const openSubDialog = (sub: any = null) => {
     setEditingSub(sub);
@@ -1317,12 +1353,54 @@ export default function ClientDetail() {
         </TabsContent>
       </Tabs>
 
-      <RenewalDialog 
-        open={renewOpen} 
-        onOpenChange={setRenewOpen} 
-        client={{ id: clientId, name: client.name, subscriptionEndDate: client.subscriptionEndDate }} 
-        lastSubscription={(subscriptions as any[])?.[0]}
-      />
+      <Dialog open={renewOpen} onOpenChange={setRenewOpen}>
+        <DialogContent className="sm:max-w-[440px] rounded-[2rem] border-border bg-card/95 backdrop-blur-xl p-8">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black flex items-center gap-3">
+              <RefreshCcw className="w-5 h-5 text-primary" />
+              تجديد الاشتراك
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-5 py-2">
+            <div className="space-y-2">
+              <Label className="font-black text-[10px] uppercase tracking-widest opacity-70">نوع الباقة</Label>
+              <Select value={subType} onValueChange={(v) => { setSubType(v); const d = new Date(subStart); let end = new Date(d); if (v === "monthly") end.setMonth(d.getMonth() + 1); else if (v === "quarterly") end.setMonth(d.getMonth() + 3); else if (v === "semi-annual") end.setMonth(d.getMonth() + 6); else if (v === "annual") end.setFullYear(d.getFullYear() + 1); setSubEnd(end.toISOString().split("T")[0]); }}>
+                <SelectTrigger className="h-11 rounded-lg bg-muted/20 border-border/40 font-bold"><SelectValue /></SelectTrigger>
+                <SelectContent className="rounded-xl border-border/40 font-bold">
+                  <SelectItem value="monthly">باقة شهرية</SelectItem>
+                  <SelectItem value="quarterly">باقة 3 شهور</SelectItem>
+                  <SelectItem value="semi-annual">باقة 6 شهور</SelectItem>
+                  <SelectItem value="annual">باقة سنوية</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="font-black text-[10px] uppercase tracking-widest opacity-70">تاريخ البداية</Label>
+                <Input type="date" value={subStart} onChange={e => { setSubStart(e.target.value); const d = new Date(e.target.value); let end = new Date(d); if (subType === "monthly") end.setMonth(d.getMonth() + 1); else if (subType === "quarterly") end.setMonth(d.getMonth() + 3); else if (subType === "semi-annual") end.setMonth(d.getMonth() + 6); else if (subType === "annual") end.setFullYear(d.getFullYear() + 1); setSubEnd(end.toISOString().split("T")[0]); }} className="h-11 rounded-lg bg-muted/20 border-border/40 font-bold" />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-black text-[10px] uppercase tracking-widest opacity-70">تاريخ النهاية</Label>
+                <Input type="date" value={subEnd} onChange={e => setSubEnd(e.target.value)} className="h-11 rounded-lg bg-muted/20 border-border/40 font-bold" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="font-black text-[10px] uppercase tracking-widest opacity-70">سعر الاشتراك (ج.م)</Label>
+              <Input type="number" value={subPrice} onChange={e => setSubPrice(e.target.value)} placeholder="0" className="h-11 rounded-lg bg-muted/20 border-border/40 font-bold" />
+            </div>
+            <div className="space-y-2">
+              <Label className="font-black text-[10px] uppercase tracking-widest opacity-70">المبلغ المدفوع الآن (ج.م)</Label>
+              <Input type="number" value={renewAmountPaid} onChange={e => setRenewAmountPaid(e.target.value)} placeholder="0" className="h-11 rounded-lg bg-muted/20 border-border/40 font-bold" />
+              <p className="text-[10px] font-medium text-muted-foreground/60">اختياري — سجل المبلغ الذي دفعه العميل اليوم</p>
+            </div>
+          </div>
+          <div className="pt-2">
+            <Button className="w-full h-12 rounded-xl font-black text-base shadow-xl shadow-primary/20" onClick={handleRenew} disabled={renewSubmitting}>
+              {renewSubmitting ? <span className="flex items-center gap-2"><RefreshCcw className="w-4 h-4 animate-spin" /> جاري...</span> : "تأكيد التجديد"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
