@@ -6,7 +6,7 @@ import { Providers } from "@/components/providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "CoachFlow - نظام إدارة النوادي الرياضية",
+  title: "CoachFlow",
   description: "منصة متكاملة لإدارة النوادي الرياضية والمدربين الشخصيين: متابعة العملاء، الاشتراكات، المدفوعات، والتمارين",
   icons: { icon: "/assets/logo.png", apple: "/assets/logo.png" },
   manifest: "/manifest.json",
