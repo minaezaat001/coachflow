@@ -68,6 +68,7 @@ model Client {
   package             Package?             @relation(fields: [packageId], references: [id])
   clientNotifications ClientNotification[]
   clientFiles         ClientFile[]
+  followups           Followup[]
 
   @@unique([phone, coachId])
 }
@@ -247,6 +248,22 @@ model ClientFile {
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
+}
+
+model Followup {
+  id            Int      @id @default(autoincrement())
+  clientId      Int
+  scheduledDate String
+  status        String   @default("PENDING")
+  notes         String?
+  completedAt   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([status])
 }
 
 model Onboarding {

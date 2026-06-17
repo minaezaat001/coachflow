@@ -1,12 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { useQuery } from "@tanstack/react-query";
-import { CalendarCheck, Clock, History, ChevronLeft, Loader2 } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { CalendarCheck, Clock, History, ChevronLeft, Loader2, AlertCircle, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -14,12 +15,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 
 const fetchClients = async () => {
   const res = await fetch("/api/checkins");
   if (!res.ok) throw new Error("فشل جلب العملاء");
   const data = await res.json();
   return data.clients || [];
+};
+
+const fetchOverdueFollowups = async () => {
+  const res = await fetch("/api/followups?overdue=true");
+  if (!res.ok) throw new Error("فشل جلب المتابعات المتأخرة");
+  const data = await res.json();
+  return data.followups || [];
 };
 
 const fetchClientProgress = async (clientId: number) => {
@@ -34,17 +43,29 @@ function safeDate(d: string) {
 }
 
 export default function CheckInsDashboard() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [tab, setTab] = React.useState<"all" | "overdue">("all");
+
   const { data: clients, isLoading } = useQuery({
     queryKey: ["clients-all"],
     queryFn: fetchClients,
+  });
+
+  const { data: overdueFollowups, isLoading: loadingOverdue } = useQuery({
+    queryKey: ["followups-overdue"],
+    queryFn: fetchOverdueFollowups,
   });
 
   const [historyClient, setHistoryClient] = React.useState<any>(null);
   const [historyProgress, setHistoryProgress] = React.useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = React.useState(false);
   const [historyOpen, setHistoryOpen] = React.useState(false);
+  const [completingId, setCompletingId] = React.useState<number | null>(null);
 
-  const activeClients = (clients as any[])?.filter((c: any) => c.subscriptionStatus === "active") || [];
+  const today = new Date().toISOString().split("T")[0];
+  const activeClients = (clients as any[])?.filter((c: any) => c.subscriptionEndDate && c.subscriptionEndDate >= today) || [];
+  const overdueCount = (overdueFollowups as any[])?.length || 0;
 
   const openHistory = async (client: any) => {
     setHistoryClient(client);
@@ -63,8 +84,25 @@ export default function CheckInsDashboard() {
     return client.nextCheckInDate ? safeDate(client.nextCheckInDate) : "غير محدد";
   };
 
+  const completeFollowup = async (followupId: number) => {
+    setCompletingId(followupId);
+    try {
+      const res = await fetch(`/api/followups/${followupId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "COMPLETED" }),
+      });
+      if (!res.ok) throw new Error("فشل إنهاء المتابعة");
+      qc.invalidateQueries({ queryKey: ["followups-overdue"] });
+      toast({ title: "تم إنهاء المتابعة" });
+    } catch {
+      toast({ title: "فشل إنهاء المتابعة", variant: "destructive" });
+    }
+    setCompletingId(null);
+  };
+
   return (
-    <div className="space-y-8 animate-fade-up">
+    <div className="space-y-6 animate-fade-up">
       <div className="space-y-1">
         <nav className="text-sm text-muted-foreground">
           <span>الرئيسية</span>
@@ -72,61 +110,132 @@ export default function CheckInsDashboard() {
           <span className="text-foreground font-medium">المتابعات</span>
         </nav>
         <h1 className="text-2xl font-semibold tracking-tight">المتابعات</h1>
-        <p className="text-sm text-muted-foreground">{activeClients.length} عميل نشط</p>
+        <p className="text-sm text-muted-foreground">{activeClients.length} عميل نشط — {overdueCount} متابعات متأخرة</p>
       </div>
 
-      {isLoading ? (
-        <div className="space-y-2">{[1,2,3,4].map(i => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}</div>
-      ) : activeClients.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-card p-12 text-center">
-          <CalendarCheck className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-          <p className="text-lg font-semibold text-muted-foreground opacity-70">لا يوجد عملاء نشطون</p>
-        </div>
-      ) : (
-        <div className="rounded-xl bg-card shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] divide-y divide-border/50">
-          {activeClients.map((client: any, i: number) => (
-            <div
-              key={client.id}
-              className="flex items-center gap-4 p-4 animate-fade-up hover:bg-muted/30 transition-colors"
-              style={{ animationDelay: `${i * 0.04}s` }}
-            >
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center font-semibold text-primary text-sm shrink-0">
-                {client.name?.charAt(0)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <Link href={`/clients/${client.id}`} className="text-sm font-medium text-foreground hover:text-primary transition-colors truncate block">
-                  {client.name}
-                </Link>
-                <div className="flex flex-wrap items-center gap-3 mt-1">
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Clock className="w-3 h-3 text-amber-500" />
-                    آخر متابعة: {getLastCheckIn(client)}
-                  </span>
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <CalendarCheck className="w-3 h-3 text-emerald-500" />
-                    القادمة: {getNextCheckIn(client)}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 px-3 rounded-lg gap-1.5 text-xs"
-                  onClick={() => openHistory(client)}
-                >
-                  <History className="w-3.5 h-3.5" />
-                  سجل المتابعات
-                </Button>
-                <Link href={`/clients/${client.id}?tab=followups`}>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                </Link>
-              </div>
+      <div className="flex items-center gap-2 bg-muted/20 p-1 rounded-xl w-fit">
+        <button
+          onClick={() => setTab("all")}
+          className={cn("px-5 py-2 rounded-lg text-xs font-semibold transition-all", tab === "all" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+        >
+          كل المتابعات
+        </button>
+        <button
+          onClick={() => setTab("overdue")}
+          className={cn("px-5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-2", tab === "overdue" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+        >
+          <AlertCircle className="w-3.5 h-3.5" />
+          المتابعات المتأخرة
+          {overdueCount > 0 && <Badge className="bg-destructive text-destructive-foreground font-bold text-[10px] px-1.5 py-0">{overdueCount}</Badge>}
+        </button>
+      </div>
+
+      {tab === "all" && (
+        <>
+          {isLoading ? (
+            <div className="space-y-2">{[1,2,3,4].map(i => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}</div>
+          ) : activeClients.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border bg-card p-12 text-center">
+              <CalendarCheck className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
+              <p className="text-lg font-semibold text-muted-foreground opacity-70">لا يوجد عملاء نشطون</p>
             </div>
-          ))}
-        </div>
+          ) : (
+            <div className="rounded-xl bg-card shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] divide-y divide-border/50">
+              {activeClients.map((client: any, i: number) => (
+                <div
+                  key={client.id}
+                  className="flex items-center gap-4 p-4 animate-fade-up hover:bg-muted/30 transition-colors"
+                  style={{ animationDelay: `${i * 0.04}s` }}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center font-semibold text-primary text-sm shrink-0">
+                    {client.name?.charAt(0)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <Link href={`/clients/${client.id}`} className="text-sm font-medium text-foreground hover:text-primary transition-colors truncate block">
+                      {client.name}
+                    </Link>
+                    <div className="flex flex-wrap items-center gap-3 mt-1">
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="w-3 h-3 text-amber-500" />
+                        آخر متابعة: {getLastCheckIn(client)}
+                      </span>
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <CalendarCheck className="w-3 h-3 text-emerald-500" />
+                        القادمة: {getNextCheckIn(client)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-3 rounded-lg gap-1.5 text-xs"
+                      onClick={() => openHistory(client)}
+                    >
+                      <History className="w-3.5 h-3.5" />
+                      سجل المتابعات
+                    </Button>
+                    <Link href={`/clients/${client.id}?tab=followups`}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {tab === "overdue" && (
+        <>
+          {loadingOverdue ? (
+            <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}</div>
+          ) : overdueFollowups?.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border bg-card p-12 text-center">
+              <CheckCircle className="w-12 h-12 text-emerald-500/30 mx-auto mb-4" />
+              <p className="text-lg font-semibold text-muted-foreground opacity-70">لا توجد متابعات متأخرة</p>
+              <p className="text-xs text-muted-foreground/50 mt-1">جميع العملاء ملتزمون بمواعيد متابعاتهم</p>
+            </div>
+          ) : (
+            <div className="rounded-xl bg-card shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] divide-y divide-border/50">
+              {(overdueFollowups as any[])?.map((f: any, i: number) => (
+                <div
+                  key={f.id}
+                  className="flex items-center gap-4 p-4 animate-fade-up hover:bg-destructive/5 transition-colors"
+                  style={{ animationDelay: `${i * 0.04}s` }}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center font-semibold text-destructive text-sm shrink-0">
+                    {f.client?.name?.charAt(0)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <Link href={`/clients/${f.client?.id}`} className="text-sm font-medium text-foreground hover:text-primary transition-colors truncate block">
+                      {f.client?.name}
+                    </Link>
+                    <div className="flex flex-wrap items-center gap-3 mt-1">
+                      <span className="flex items-center gap-1 text-xs text-destructive font-medium">
+                        <AlertCircle className="w-3 h-3" />
+                        متأخرة منذ {safeDate(f.scheduledDate)}
+                      </span>
+                      {f.notes && <span className="text-xs text-muted-foreground">{f.notes}</span>}
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="h-8 px-3 rounded-lg gap-1.5 text-xs shrink-0"
+                    variant="outline"
+                    onClick={() => completeFollowup(f.id)}
+                    disabled={completingId === f.id}
+                  >
+                    {completingId === f.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                    تمت المتابعة
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
@@ -194,7 +303,6 @@ export default function CheckInsDashboard() {
                       <p className="text-xs text-muted-foreground/70 font-medium">{p.notes}</p>
                     </div>
                   )}
-
                 </div>
               ))
             )}
