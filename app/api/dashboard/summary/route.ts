@@ -13,17 +13,19 @@ export async function GET() {
 
     const clients = await prisma.client.findMany({ where: { coachId: user.id } });
     const totalClients = clients.length;
-    const activeClients = clients.filter((c) => c.subscriptionStatus === "active").length;
-    const expiredClients = clients.filter((c) => c.subscriptionStatus === "expired").length;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayStr = today.toISOString().split("T")[0];
+    const today = new Date().toISOString().split("T")[0];
+    const activeClients = clients.filter((c) => c.subscriptionEndDate && c.subscriptionEndDate >= today).length;
+    const expiredClients = clients.filter((c) => c.subscriptionEndDate && c.subscriptionEndDate < today).length;
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayStr = todayStart.toISOString().split("T")[0];
 
     const pendingFollowups = await prisma.client.count({
       where: {
         coachId: user.id,
-        subscriptionStatus: "active",
+        subscriptionEndDate: { gte: today },
         nextCheckInDate: { lte: todayStr },
       },
     });
