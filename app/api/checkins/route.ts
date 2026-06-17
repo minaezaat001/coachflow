@@ -23,6 +23,7 @@ export async function GET() {
       phone: c.phone,
       goal: c.goal,
       subscriptionStatus: c.subscriptionStatus,
+      subscriptionEndDate: c.subscriptionEndDate,
       nextCheckInDate: c.nextCheckInDate,
       defaultCheckInFrequency: c.defaultCheckInFrequency,
       lastCheckInDate: c.progress[0]?.recordedAt || null,

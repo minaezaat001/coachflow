@@ -64,7 +64,8 @@ export default function CheckInsDashboard() {
   const [completingId, setCompletingId] = React.useState<number | null>(null);
 
   const today = new Date().toISOString().split("T")[0];
-  const activeClients = (clients as any[])?.filter((c: any) => c.subscriptionEndDate && c.subscriptionEndDate >= today) || [];
+  const allClients = (clients as any[]) || [];
+  const activeClients = allClients.filter((c: any) => c.subscriptionEndDate && c.subscriptionEndDate >= today);
   const overdueCount = (overdueFollowups as any[])?.length || 0;
 
   const openHistory = async (client: any) => {
@@ -110,7 +111,7 @@ export default function CheckInsDashboard() {
           <span className="text-foreground font-medium">المتابعات</span>
         </nav>
         <h1 className="text-2xl font-semibold tracking-tight">المتابعات</h1>
-        <p className="text-sm text-muted-foreground">{activeClients.length} عميل نشط — {overdueCount} متابعات متأخرة</p>
+        <p className="text-sm text-muted-foreground">{activeClients.length} عميل نشط — {allClients.length} إجمالي — {overdueCount} متابعات متأخرة</p>
       </div>
 
       <div className="flex items-center gap-2 bg-muted/20 p-1 rounded-xl w-fit">
@@ -134,14 +135,14 @@ export default function CheckInsDashboard() {
         <>
           {isLoading ? (
             <div className="space-y-2">{[1,2,3,4].map(i => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}</div>
-          ) : activeClients.length === 0 ? (
+          ) : allClients.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border bg-card p-12 text-center">
               <CalendarCheck className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-              <p className="text-lg font-semibold text-muted-foreground opacity-70">لا يوجد عملاء نشطون</p>
+              <p className="text-lg font-semibold text-muted-foreground opacity-70">لا يوجد عملاء</p>
             </div>
           ) : (
             <div className="rounded-xl bg-card shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] divide-y divide-border/50">
-              {activeClients.map((client: any, i: number) => (
+              {allClients.map((client: any, i: number) => (
                 <div
                   key={client.id}
                   className="flex items-center gap-4 p-4 animate-fade-up hover:bg-muted/30 transition-colors"
