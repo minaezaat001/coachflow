@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { calculateClientStatus } from "@/lib/utils";
 import {
@@ -11,7 +12,6 @@ import {
   TrendingUp,
   Activity,
   Clock,
-  RefreshCcw,
   CheckSquare,
   ListTodo,
   ArrowUpRight,
@@ -23,7 +23,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { format } from "date-fns";
 import { arEG } from "date-fns/locale";
-import { RenewalDialog } from "@/components/RenewalDialog";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -130,6 +129,7 @@ const StatCard = ({
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const router = useRouter();
   const { data: summary, isLoading: loadingSummary } = useQuery({
     queryKey: ["dashboardSummary"],
     queryFn: fetchSummary,
@@ -151,8 +151,6 @@ export default function Dashboard() {
   React.useEffect(() => {
     fetch("/api/notifications/generate", { method: "POST" }).catch(() => {});
   }, []);
-
-  const [renewClient, setRenewClient] = useState<any>(null);
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -346,12 +344,16 @@ export default function Dashboard() {
                 const isExpired = sub.period === "expired";
                 const isUrgent = !isExpired && sub.daysLeft <= 3;
                 return (
-                  <div key={`${sub.clientId}-${sub.endDate}`} className={cn(
-                    "flex items-center gap-3 px-5 py-4 transition-colors",
-                    isExpired ? "bg-destructive/[0.03] hover:bg-destructive/[0.06]" :
-                    isUrgent ? "bg-warning/[0.03] hover:bg-warning/[0.06]" :
-                    "hover:bg-muted/30"
-                  )}>
+                  <div
+                    key={`${sub.clientId}-${sub.endDate}`}
+                    onClick={() => router.push(`/clients/${sub.clientId}`)}
+                    className={cn(
+                      "flex items-center gap-3 px-5 py-4 transition-all cursor-pointer",
+                      isExpired ? "bg-destructive/[0.03] hover:bg-destructive/[0.12]" :
+                      isUrgent ? "bg-warning/[0.03] hover:bg-warning/[0.12]" :
+                      "hover:bg-muted/50"
+                    )}
+                  >
                     <div className={cn(
                       "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
                       isExpired ? "bg-destructive/10" : isUrgent ? "bg-warning/10" : "bg-primary/10"
@@ -362,7 +364,7 @@ export default function Dashboard() {
                       )} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={cn("text-sm", isExpired ? "font-semibold text-destructive" : "font-medium text-foreground")}>
+                      <p className={cn("text-sm font-semibold", isExpired ? "text-destructive" : "text-foreground")}>
                         {sub.clientName}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
@@ -373,17 +375,6 @@ export default function Dashboard() {
                       <Badge variant={isExpired ? "destructive" : "warning"}>
                         {isExpired ? "منتهي" : "ينتهي قريباً"}
                       </Badge>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="w-8 h-8"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setRenewClient(sub);
-                        }}
-                      >
-                        <RefreshCcw className="w-3.5 h-3.5" />
-                      </Button>
                     </div>
                   </div>
                 );
@@ -393,17 +384,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {renewClient && (
-        <RenewalDialog
-          open={!!renewClient}
-          onOpenChange={(open) => !open && setRenewClient(null)}
-          client={{
-            id: renewClient.clientId,
-            name: renewClient.clientName,
-            subscriptionEndDate: renewClient.endDate,
-          }}
-        />
-      )}
     </div>
   );
 }
