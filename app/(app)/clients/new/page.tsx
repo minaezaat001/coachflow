@@ -19,6 +19,7 @@ import { PdfUpload } from "@/components/PdfUpload"
 const schema = z.object({
   name: z.string().min(2, "الاسم مطلوب"),
   phone: z.string().min(10, "رقم الهاتف غير صحيح"),
+  age: z.string().min(1, "السن مطلوب"),
   goal: z.string().min(1, "الهدف مطلوب"),
   weight: z.string().optional(),
   height: z.string().optional(),
@@ -76,6 +77,7 @@ function ClientNewForm() {
     defaultValues: {
       name: searchParams.get("name") || "",
       phone: searchParams.get("phone") || "",
+      age: searchParams.get("age") || "",
       goal: searchParams.get("goal") || "لياقة",
       weight: searchParams.get("weight") || "",
       height: searchParams.get("height") || "",
@@ -129,6 +131,7 @@ function ClientNewForm() {
       const payload: any = {
         name: values.name,
         phone: values.phone,
+        age: values.age ? parseInt(values.age) : null,
         goal: values.goal,
         weight: values.weight || null,
         height: values.height || null,
@@ -256,8 +259,14 @@ function ClientNewForm() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-black text-foreground">الهدف الرئيسي *</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-sm font-black text-foreground">السن *</Label>
+                <Input {...register("age")} type="number" placeholder="25" className="rounded-xl h-11 border-border/50 bg-background/50 focus:bg-background transition-all" />
+                {errors.age && <p className="text-xs text-destructive font-bold">{errors.age.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-black text-foreground">الهدف الرئيسي *</Label>
               <Select value={goal} onValueChange={(v) => setValue("goal", v)}>
                 <SelectTrigger className="rounded-xl h-11 border-border/50 bg-background/50">
                   <SelectValue />
@@ -271,8 +280,9 @@ function ClientNewForm() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label className="text-sm font-black text-foreground">الوزن الحالي (كجم)</Label>
                 <Input {...register("weight")} type="number" placeholder="80" className="rounded-xl h-11 border-border/50 bg-background/50 focus:bg-background transition-all" />

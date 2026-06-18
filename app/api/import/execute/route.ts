@@ -7,7 +7,8 @@ import * as XLSX from "xlsx";
 const SYSTEM_FIELDS = [
   { key: "name", label: "الاسم", required: true },
   { key: "phone", label: "رقم الهاتف", required: true },
-  { key: "goal", label: "الهدف", required: true },
+  { key: "age", label: "السن", required: true },
+  { key: "goal", label: "الهدف", required: false },
   { key: "weight", label: "الوزن", required: false },
   { key: "height", label: "الطول", required: false },
   { key: "notes", label: "ملاحظات", required: false },
@@ -21,8 +22,9 @@ const SYSTEM_FIELDS = [
 function detectField(column: string): string | null {
   const c = column.trim().toLowerCase();
   const map: Record<string, string[]> = {
-    name: ["name", "full name", "client name", "اسم", "الاسم", "اسم العميل", "العميل"],
-    phone: ["phone", "mobile", "telephone", "phone number", "mobile number", "تليفون", "موبايل", "رقم الهاتف", "رقم الموبايل", "هاتف"],
+    name: ["name", "full name", "client name", "اسم", "الاسم", "اسم العميل", "العميل", "كامل الاسم"],
+    phone: ["phone", "mobile", "telephone", "phone number", "mobile number", "تليفون", "موبايل", "رقم الهاتف", "رقم الموبايل", "هاتف", "واتساب", "whatsapp"],
+    age: ["age", "ages", "العمر", "السن", "سن", "عمر"],
     goal: ["goal", "target", "objective", "aim", "الهدف", "هدف", "الغرض"],
     weight: ["weight", "وزن", "الوزن"],
     height: ["height", "length", "طول", "الطول"],
@@ -70,6 +72,32 @@ export async function POST(req: Request) {
       }
       if (!mapped.goal) mapped.goal = "عام";
 
+      // Use manual fields from enriched rows (_ prefixed fields from frontend)
+      const manualStartDate = row._startDate || mapped.subscriptionStartDate || null;
+      const manualAmountPaid = row._amountPaid || mapped.amountPaid || null;
+      const manualPrice = row._subscriptionPrice || mapped.subscriptionPrice || null;
+      const manualType = row._subscriptionType || mapped.subscriptionType || null;
+      const manualDuration = row._subscriptionDuration || null;
+      const manualCheckInFreq = row._defaultCheckInFrequency || null;
+
+      // Calculate end date from start date + duration
+      let manualEndDate = mapped.subscriptionEndDate || null;
+      if (manualStartDate && manualDuration && !manualEndDate) {
+        const start = new Date(manualStartDate);
+        const end = new Date(start);
+        end.setMonth(end.getMonth() + parseInt(manualDuration));
+        manualEndDate = end.toISOString().split("T")[0];
+      }
+
+      // Calculate nextCheckInDate
+      let nextCheckInDate = null;
+      if (manualStartDate && manualCheckInFreq) {
+        const start = new Date(manualStartDate);
+        const next = new Date(start);
+        next.setDate(next.getDate() + parseInt(manualCheckInFreq));
+        nextCheckInDate = next.toISOString().split("T")[0];
+      }
+
       // Check duplicate phone
       const existing = await prisma.client.findFirst({ where: { phone: mapped.phone, coachId: user.id } });
       if (existing) {
@@ -79,60 +107,57 @@ export async function POST(req: Request) {
 
       try {
         const uniqueToken = crypto.randomBytes(16).toString("hex");
-
-        // Determine subscription status based on endDate
-        const subEndDate = mapped.subscriptionEndDate || null;
         const now = new Date().toISOString().split("T")[0];
-        const subStatus = subEndDate && subEndDate < now ? "expired" : mapped.subscriptionType ? "active" : "pending";
 
         const client = await prisma.client.create({
           data: {
             coachId: user.id,
             name: mapped.name,
             phone: mapped.phone,
+            age: mapped.age ? parseInt(mapped.age) : null,
             goal: mapped.goal,
             weight: mapped.weight ? parseFloat(mapped.weight) : null,
             height: mapped.height ? parseFloat(mapped.height) : null,
             notes: mapped.notes || null,
-            subscriptionType: mapped.subscriptionType || null,
-            subscriptionStartDate: mapped.subscriptionStartDate || null,
-            subscriptionEndDate: subEndDate,
-            subscriptionStatus: subStatus,
-            paymentStatus: "unpaid",
+            subscriptionType: manualType,
+            subscriptionStartDate: manualStartDate,
+            subscriptionEndDate: manualEndDate,
+            subscriptionStatus: manualEndDate && manualEndDate < now ? "expired" : manualType ? "active" : "pending",
+            paymentStatus: manualAmountPaid ? (parseFloat(manualAmountPaid) >= parseFloat(manualPrice || "0") ? "paid" : "partial") : "unpaid",
+            packageId: row._packageId ? parseInt(row._packageId) : null,
+            defaultCheckInFrequency: manualCheckInFreq ? parseInt(manualCheckInFreq) : null,
+            nextCheckInDate,
             uniqueToken,
           },
         });
 
-        // Create subscription if price provided
-        if (mapped.subscriptionPrice && mapped.subscriptionStartDate && mapped.subscriptionEndDate) {
+        // Create subscription
+        if (manualPrice && manualStartDate && manualEndDate) {
           await prisma.subscription.create({
             data: {
               clientId: client.id,
-              type: mapped.subscriptionType || "monthly",
-              startDate: mapped.subscriptionStartDate,
-              endDate: mapped.subscriptionEndDate,
-              price: Math.round(parseFloat(mapped.subscriptionPrice)),
-              status: subEndDate && subEndDate < now ? "expired" : "active",
+              type: manualType || "monthly",
+              startDate: manualStartDate,
+              endDate: manualEndDate,
+              price: Math.round(parseFloat(manualPrice)),
+              status: manualEndDate < now ? "expired" : "active",
             },
           });
         }
 
-        // Create payment if amountPaid provided
-        if (mapped.amountPaid) {
-          const paidAmount = parseFloat(mapped.amountPaid);
+        // Create payment
+        if (manualAmountPaid) {
+          const paidAmount = parseFloat(manualAmountPaid);
           if (!isNaN(paidAmount) && paidAmount > 0) {
             await prisma.payment.create({
               data: {
                 clientId: client.id,
                 amount: paidAmount,
-                status: "paid",
+                amountRemaining: Math.max(0, (manualPrice ? parseFloat(manualPrice) : 0) - paidAmount),
+                status: paidAmount >= (manualPrice ? parseFloat(manualPrice) : 0) ? "paid" : "partial",
                 method: "cash",
-                paidAt: new Date().toISOString(),
+                paidAt: new Date().toISOString().split("T")[0],
               },
-            });
-            await prisma.client.update({
-              where: { id: client.id },
-              data: { paymentStatus: "paid" },
             });
           }
         }

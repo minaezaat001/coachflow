@@ -35,6 +35,7 @@ model Client {
   coachId                 String
   name                    String
   phone                   String
+  age                     Int?
   goal                    String
   weight                  Float?
   height                  Float?

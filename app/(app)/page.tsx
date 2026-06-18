@@ -54,15 +54,17 @@ const fetchExpiringSoon = async () => {
   const res = await fetch("/api/dashboard/expiring-soon");
   if (!res.ok) throw new Error("فشل جلب الاشتراكات المنتهية");
   const data = await res.json();
-  const now = new Date();
   return (data.clients || []).map((c: any) => {
-    const endDate = new Date(c.subscriptionEndDate);
-    const diffDays = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    const endDate = c.subscriptionEndDate || c.nextCheckInDate || "";
+    const now = new Date();
+    const targetDate = new Date(endDate);
+    const diffDays = Math.ceil((targetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     return {
       clientId: c.id,
       clientName: c.name,
-      endDate: c.subscriptionEndDate,
+      endDate,
       daysLeft: diffDays,
+      period: c.period,
       status: calculateClientStatus(c),
     };
   }).sort((a: any, b: any) => a.daysLeft - b.daysLeft);
@@ -341,7 +343,7 @@ export default function Dashboard() {
           ) : (
             <div className="divide-y divide-border/50">
               {expiring.map((sub: any) => {
-                const isExpired = sub.status === "expired";
+                const isExpired = sub.period === "expired";
                 const isUrgent = !isExpired && sub.daysLeft <= 3;
                 return (
                   <div key={`${sub.clientId}-${sub.endDate}`} className={cn(
@@ -364,12 +366,12 @@ export default function Dashboard() {
                         {sub.clientName}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {format(new Date(sub.endDate), "dd MMM yyyy", { locale: arEG })}
+                        {sub.endDate ? format(new Date(sub.endDate), "dd MMM yyyy", { locale: arEG }) : "—"}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant={isExpired ? "destructive" : isUrgent ? "warning" : "success"}>
-                        {isExpired ? "منتهي" : sub.daysLeft === 0 ? "ينتهي اليوم" : `${sub.daysLeft} أيام`}
+                      <Badge variant={isExpired ? "destructive" : "warning"}>
+                        {isExpired ? "منتهي" : "ينتهي قريباً"}
                       </Badge>
                       <Button
                         variant="ghost"

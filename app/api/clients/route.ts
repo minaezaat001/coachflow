@@ -99,6 +99,7 @@ export async function POST(req: Request) {
       coachId: user.id,
       name: data.name,
       phone: data.phone,
+      age: data.age ? parseInt(data.age) : null,
       goal: data.goal,
       weight: data.weight ? parseFloat(data.weight) : null,
       height: data.height ? parseFloat(data.height) : null,
