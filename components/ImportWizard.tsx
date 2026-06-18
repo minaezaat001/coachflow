@@ -31,8 +31,8 @@ const FIELD_ALIASES: Record<string, string[]> = {
   height: ["height", "length", "طول", "الطول"],
   notes: ["notes", "note", "remarks", "comments", "ملاحظات", "ملاحظة", "age", "العمر", "سن"],
   subscriptionType: ["subscription type", "plan", "package", "type", "subscription", "نوع الاشتراك", "الباقة", "الاشتراك", "النوع"],
-  subscriptionPrice: ["subscription price", "price", "amount", "cost", "fee", "سعر الاشتراك", "السعر", "المبلغ", "التكلفة"],
   amountPaid: ["amount paid", "paid", "paid amount", "payment", "المدفوع", "المبلغ المدفوع", "الدفعة", "مدفوع"],
+  subscriptionPrice: ["subscription price", "price", "cost", "fee", "سعر الاشتراك", "السعر", "إجمالي", "التكلفة"],
   subscriptionStartDate: ["start date", "start", "begin date", "تاريخ البداية", "بداية", "من"],
   subscriptionEndDate: ["end date", "end", "expiry", "تاريخ النهاية", "نهاية", "إلى"],
 };
