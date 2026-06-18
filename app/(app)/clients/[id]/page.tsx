@@ -555,6 +555,12 @@ export default function ClientDetail() {
                     <Target className="w-4 h-4 text-primary" />
                     الهدف: {client.goal}
                   </span>
+                  {client.age && (
+                    <span className="flex items-center gap-1.5">
+                      <Calendar className="w-4 h-4 text-primary" />
+                      {client.age} سنة
+                    </span>
+                  )}
                   {client.weight && (
                     <span className="flex items-center gap-1.5">
                       <Scale className="w-4 h-4 text-primary" />
