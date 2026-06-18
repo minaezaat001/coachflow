@@ -251,13 +251,14 @@ export default function ClientDetail() {
   const [renewAmountPaid, setRenewAmountPaid] = useState("");
   const [renewSubmitting, setRenewSubmitting] = useState(false);
   const [selectedRenewPkgId, setSelectedRenewPkgId] = useState("");
-  useEffect(() => { if (renewOpen) { setRenewAmountPaid(""); setSelectedRenewPkgId(""); setSubStart(new Date().toISOString().split("T")[0]); setSubType("monthly"); const d = new Date(); d.setMonth(d.getMonth() + 1); setSubEnd(d.toISOString().split("T")[0]); setSubPrice(""); } }, [renewOpen]);
+  useEffect(() => { if (renewOpen) { setRenewAmountPaid(""); setSelectedRenewPkgId(""); setRenewPkg(null); setSubStart(new Date().toISOString().split("T")[0]); setSubType("monthly"); const d = new Date(); d.setMonth(d.getMonth() + 1); setSubEnd(d.toISOString().split("T")[0]); setSubPrice(""); } }, [renewOpen]);
 
   const handlePkgSelect = (pkgId: string) => {
     setSelectedRenewPkgId(pkgId);
-    if (!pkgId) return;
+    if (!pkgId) { setRenewPkg(null); return; }
     const pkg = (allPackages as any[])?.find((p: any) => String(p.id) === String(pkgId));
     if (!pkg) return;
+    setRenewPkg(pkg);
     setSubType(pkg.packageType || "monthly");
     setSubPrice(String(pkg.price || ""));
     const start = new Date(subStart);
@@ -265,6 +266,8 @@ export default function ClientDetail() {
     end.setMonth(end.getMonth() + (pkg.durationMonths || 1));
     setSubEnd(end.toISOString().split("T")[0]);
   };
+
+  const [renewPkg, setRenewPkg] = React.useState<any>(null);
   const [subType, setSubType] = useState("monthly");
   const [subStart, setSubStart] = useState(new Date().toISOString().split("T")[0]);
   const [subEnd, setSubEnd] = useState("");
@@ -311,13 +314,28 @@ export default function ClientDetail() {
     if (!subEnd) { toast({ title: "حدد تاريخ النهاية", variant: "destructive" }); return; }
     setRenewSubmitting(true);
     try {
+      const subTypeValue = renewPkg?.name || subType;
       const subRes = await fetch("/api/subscriptions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId: parseInt(clientId), type: subType, startDate: subStart, endDate: subEnd, price: subPrice ? Math.round(parseFloat(subPrice)) : undefined, status: "active" }),
+        body: JSON.stringify({ clientId: parseInt(clientId), type: subTypeValue, startDate: subStart, endDate: subEnd, price: subPrice ? Math.round(parseFloat(subPrice)) : undefined, status: "active" }),
       });
       if (!subRes.ok) { const e = await subRes.json(); throw new Error(e.error || "فشل إنشاء الاشتراك"); }
       const subData = await subRes.json();
+
+      // Update client: link package, set nextCheckInDate
+      const clientPatch: any = { nextCheckInDate: subEnd };
+      if (renewPkg) {
+        clientPatch.packageId = renewPkg.id;
+        clientPatch.defaultCheckInFrequency = renewPkg.defaultCheckInFrequency || 7;
+      } else {
+        clientPatch.defaultCheckInFrequency = 7;
+      }
+      await fetch(`/api/clients/${clientId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(clientPatch),
+      });
 
       if (renewAmountPaid && parseFloat(renewAmountPaid) > 0) {
         const payRes = await fetch("/api/payments", {
