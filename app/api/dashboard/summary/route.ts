@@ -16,7 +16,11 @@ export async function GET() {
 
     const today = new Date().toISOString().split("T")[0];
     const activeClients = clients.filter((c) => c.subscriptionEndDate && c.subscriptionEndDate >= today).length;
-    const expiredClients = clients.filter((c) => c.subscriptionEndDate && c.subscriptionEndDate < today).length;
+    const expiredClients = clients.filter((c) => {
+      if (c.subscriptionEndDate && c.subscriptionEndDate < today) return true;
+      if (!c.subscriptionEndDate && c.nextCheckInDate && c.nextCheckInDate < today) return true;
+      return false;
+    }).length;
 
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);

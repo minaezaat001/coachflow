@@ -18,7 +18,6 @@ export async function GET() {
           gte: todayStr,
           lte: weekEndStr,
         },
-        subscriptionStatus: "active",
       },
       orderBy: { subscriptionEndDate: "asc" },
     });
