@@ -786,12 +786,6 @@ export default function ClientDetail() {
               </DialogContent>
             </Dialog>
             <Dialog open={subOpen} onOpenChange={setSubOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="h-10 px-4 rounded-lg gap-2 font-black bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all text-[10px] uppercase tracking-widest">
-                  <Plus className="w-4 h-4" />
-                  إضافة اشتراك
-                </Button>
-              </DialogTrigger>
               <DialogContent className="rounded-2xl border-border bg-card/95 backdrop-blur-xl p-8">
                 <DialogHeader><DialogTitle className="text-xl font-black">إدارة الاشتراك</DialogTitle></DialogHeader>
                 <div className="space-y-4 pt-4">
