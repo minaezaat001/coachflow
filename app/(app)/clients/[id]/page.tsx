@@ -849,14 +849,14 @@ export default function ClientDetail() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               {(subscriptions as any[])?.map((s: any) => (
-                <Card key={s.id} className="cursor-pointer hover:bg-card/80 hover:scale-[1.01] transition-all group rounded-2xl border-border/50 premium-shadow bg-card/40 backdrop-blur-sm" onClick={() => openSubDialog(s)}>
+                <Card key={s.id} className="rounded-2xl border-border/50 premium-shadow bg-card/40 backdrop-blur-sm">
                   <CardContent className="p-4 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-4">
-                      <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 group-hover:bg-primary group-hover:text-primary-foreground transition-all shadow-inner">
+                      <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner">
                         <Calendar className="w-5 h-5" />
                       </div>
                       <div>
-                        <div className="font-black text-base text-foreground group-hover:text-primary transition-colors tracking-tight">
+                        <div className="font-black text-base text-foreground tracking-tight">
                           {client?.package?.name || subTypeLabel(s.type)}
                         </div>
                         <div className="text-xs text-muted-foreground font-black opacity-70 mt-0.5">{safeDate(s.startDate)} — {safeDate(s.endDate)}</div>
