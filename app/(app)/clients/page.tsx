@@ -211,80 +211,73 @@ export default function Clients() {
         </div>
       ) : (
         <>
-        <div className="rounded-xl bg-card shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] divide-y divide-border/50 overflow-hidden">
+        <div className="md:rounded-xl md:bg-card md:shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] md:divide-y md:divide-border/50 md:overflow-hidden">
           {clients.map((client: any, i: number) => {
             const subStatus = client.subscriptionStatus;
             return (
               <div
                 key={client.id}
                 className={cn(
-                  "flex items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/30 animate-fade-up",
-                  subStatus === "active" && "border-r-2 border-success/40",
-                  subStatus === "expired" && "border-r-2 border-destructive/40",
-                  subStatus === "pending" && "border-r-2 border-warning/40"
+                  "flex flex-col md:flex-row md:items-center gap-3 md:gap-4 px-5 py-4 transition-colors hover:bg-muted/30 animate-fade-up rounded-xl md:rounded-none mx-2 md:mx-0 mb-2 md:mb-0 bg-card md:bg-transparent shadow-sm md:shadow-none",
+                  subStatus === "active" && "md:border-r-2 md:border-success/40",
+                  subStatus === "expired" && "md:border-r-2 md:border-destructive/40",
+                  subStatus === "pending" && "md:border-r-2 md:border-warning/40"
                 )}
                 style={{ animationDelay: `${i * 0.03}s` }}
               >
-                <div className={cn(
-                  "w-10 h-10 rounded-lg flex items-center justify-center font-semibold shrink-0",
-                  subStatus === "active" ? "bg-energy/10 text-energy" :
-                  subStatus === "expired" ? "bg-destructive/10 text-destructive" :
-                  "bg-warning/10 text-warning"
-                )}>
-                  {client.name?.charAt(0)}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Link href={`/clients/${client.id}`}>
-                      <span className="text-sm font-semibold text-foreground hover:text-primary transition-colors">
-                        {client.name}
-                      </span>
-                    </Link>
-                    {client.tags?.includes("VIP") && (
-                      <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                    )}
+                <div className="flex items-center gap-3 w-full md:w-auto">
+                  <div className={cn(
+                    "w-10 h-10 rounded-xl flex items-center justify-center font-black shrink-0 text-sm",
+                    subStatus === "active" ? "bg-energy/10 text-energy" :
+                    subStatus === "expired" ? "bg-destructive/10 text-destructive" :
+                    "bg-warning/10 text-warning"
+                  )}>
+                    {client.name?.charAt(0)}
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <span dir="ltr">{client.phone}</span>
-                    {client.goal && (
-                      <>
-                        <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
-                        <span className="flex items-center gap-1">
-                          <Dumbbell className="w-3 h-3" />
-                          {client.goal}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <Link href={`/clients/${client.id}`}>
+                        <span className="text-sm font-black text-foreground hover:text-primary transition-colors">
+                          {client.name}
                         </span>
-                      </>
-                    )}
-                    {client.weight && (
-                      <>
-                        <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
-                        <span className="flex items-center gap-1">
-                          <Weight className="w-3 h-3" />
-                          {client.weight} كجم
-                        </span>
-                      </>
-                    )}
+                      </Link>
+                      {client.tags?.includes("VIP") && (
+                        <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0" />
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground font-medium mt-0.5" dir="ltr">{client.phone}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 md:gap-3">
                   <Badge variant={statusConfig[subStatus]?.variant || "secondary"}>
                     {statusConfig[subStatus]?.label || subStatus}
                   </Badge>
                   <Badge variant={paymentConfig[client.paymentStatus]?.variant || "secondary"}>
                     {paymentConfig[client.paymentStatus]?.label || client.paymentStatus}
                   </Badge>
+                  {client.goal && (
+                    <span className="hidden md:inline-flex items-center gap-1 text-xs text-muted-foreground font-medium">
+                      <Dumbbell className="w-3 h-3" />
+                      {client.goal}
+                    </span>
+                  )}
+                  {client.weight && (
+                    <span className="hidden md:inline-flex items-center gap-1 text-xs text-muted-foreground font-medium">
+                      <Weight className="w-3 h-3" />
+                      {client.weight} كجم
+                    </span>
+                  )}
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center justify-end md:justify-start gap-1 w-full md:w-auto md:mr-auto">
                   <a href={`https://wa.me/2${client.phone}`} target="_blank" rel="noopener noreferrer">
-                    <Button variant="ghost" size="icon" className="w-8 h-8 text-energy hover:text-energy hover:bg-energy/10">
+                    <Button variant="ghost" size="icon" className="w-9 h-9 md:w-8 md:h-8 text-energy hover:text-energy hover:bg-energy/10 rounded-xl md:rounded-lg">
                       <MessageCircle className="w-4 h-4" />
                     </Button>
                   </a>
                   <Link href={`/clients/${client.id}`}>
-                    <Button variant="ghost" size="icon" className="w-8 h-8">
+                    <Button variant="ghost" size="icon" className="w-9 h-9 md:w-8 md:h-8 rounded-xl md:rounded-lg">
                       <ChevronLeft className="w-4 h-4" />
                     </Button>
                   </Link>
@@ -292,7 +285,7 @@ export default function Clients() {
                     variant="ghost"
                     size="icon"
                     onClick={() => setDeleteId(client.id)}
-                    className="w-8 h-8 text-destructive/60 hover:text-destructive hover:bg-destructive/10"
+                    className="w-9 h-9 md:w-8 md:h-8 text-destructive/60 hover:text-destructive hover:bg-destructive/10 rounded-xl md:rounded-lg"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
