@@ -25,6 +25,20 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       },
     });
 
+    // Advance nextCheckInDate so the overdue endpoint doesn't recreate a followup
+    if (data.status === "COMPLETED") {
+      const client = await prisma.client.findUnique({ where: { id: followup.clientId } });
+      if (client) {
+        const freq = client.defaultCheckInFrequency || 7;
+        const nextDate = new Date();
+        nextDate.setDate(nextDate.getDate() + freq);
+        await prisma.client.update({
+          where: { id: client.id },
+          data: { nextCheckInDate: nextDate.toISOString().split("T")[0] },
+        });
+      }
+    }
+
     return NextResponse.json({ followup: updated });
   } catch (error) {
     return NextResponse.json({ error: "فشل تحديث المتابعة" }, { status: 500 });

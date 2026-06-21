@@ -94,10 +94,18 @@ export default function CheckInsDashboard() {
         body: JSON.stringify({ status: "COMPLETED" }),
       });
       if (!res.ok) throw new Error("فشل إنهاء المتابعة");
+
+      // Optimistic removal from cache
+      qc.setQueryData(["followups-overdue"], (old: any[] | undefined) => {
+        if (!old) return old;
+        return old.filter((f: any) => f.id !== followupId);
+      });
+
       qc.invalidateQueries({ queryKey: ["followups-overdue"] });
-      toast({ title: "تم إنهاء المتابعة" });
+      toast({ title: "تم إنهاء المتابعة", description: "تم تسجيل المتابعة بنجاح" });
     } catch {
       toast({ title: "فشل إنهاء المتابعة", variant: "destructive" });
+      qc.invalidateQueries({ queryKey: ["followups-overdue"] });
     }
     setCompletingId(null);
   };
