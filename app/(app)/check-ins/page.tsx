@@ -62,6 +62,7 @@ export default function CheckInsDashboard() {
   const [historyLoading, setHistoryLoading] = React.useState(false);
   const [historyOpen, setHistoryOpen] = React.useState(false);
   const [completingId, setCompletingId] = React.useState<number | null>(null);
+  const [confirmTarget, setConfirmTarget] = React.useState<number | null>(null);
 
   const today = new Date().toISOString().split("T")[0];
   const allClients = (clients as any[]) || [];
@@ -234,7 +235,7 @@ export default function CheckInsDashboard() {
                     size="sm"
                     className="h-8 px-3 rounded-lg gap-1.5 text-xs shrink-0"
                     variant="outline"
-                    onClick={() => completeFollowup(f.id)}
+                    onClick={() => setConfirmTarget(f.id)}
                     disabled={completingId === f.id}
                   >
                     {completingId === f.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
@@ -246,6 +247,36 @@ export default function CheckInsDashboard() {
           )}
         </>
       )}
+
+      <Dialog open={confirmTarget !== null} onOpenChange={(open) => { if (!open) setConfirmTarget(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold">تأكيد إنهاء المتابعة</DialogTitle>
+          </DialogHeader>
+          <div className="pt-2 space-y-5">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              هل أنت متأكد من تسجيل متابعة <span className="font-semibold text-foreground">{overdueFollowups?.find((f: any) => f.id === confirmTarget)?.client?.name}</span> كمكتملة؟
+            </p>
+            <div className="flex items-center gap-3 justify-end">
+              <Button variant="outline" size="sm" className="h-9 px-4 rounded-lg" onClick={() => setConfirmTarget(null)}>
+                إلغاء
+              </Button>
+              <Button
+                size="sm"
+                className="h-9 px-4 rounded-lg gap-1.5"
+                onClick={() => {
+                  const id = confirmTarget;
+                  setConfirmTarget(null);
+                  if (id) completeFollowup(id);
+                }}
+              >
+                <CheckCircle className="w-4 h-4" />
+                تأكيد
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
         <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
